@@ -120,7 +120,7 @@ export function TaskForm({ task, categories, onSave, onClose }: TaskFormProps) {
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] grid-rows-[auto,1fr,auto]">
+    <DialogContent className="sm:max-w-[600px] grid-rows-[auto,1fr,auto] max-h-[90svh] flex flex-col">
       <DialogHeader>
         <DialogTitle>{task ? 'Edit Task' : 'Create Task'}</DialogTitle>
         <DialogDescription>
@@ -128,7 +128,7 @@ export function TaskForm({ task, categories, onSave, onClose }: TaskFormProps) {
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 overflow-y-auto pr-2">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 overflow-y-auto pr-4 flex-grow">
           <FormField
             control={form.control}
             name="title"
