@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
+import { SidebarTrigger } from './ui/sidebar';
 
 type SortOrder = 'priority' | 'deadline' | 'title';
 
@@ -224,9 +225,12 @@ export function TaskPageClient() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">My Tasks</h1>
-          <p className="text-muted-foreground">Manage your tasks efficiently with AI.</p>
+        <div className="flex items-center gap-2">
+            <SidebarTrigger className="md:hidden"/>
+            <div>
+                <h1 className="text-3xl font-bold font-headline">My Tasks</h1>
+                <p className="text-muted-foreground">Manage your tasks efficiently with AI.</p>
+            </div>
         </div>
         <Dialog
           open={isFormOpen}
@@ -236,7 +240,7 @@ export function TaskPageClient() {
           }}
         >
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Task
             </Button>
@@ -252,13 +256,13 @@ export function TaskPageClient() {
         </Dialog>
       </header>
 
-      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="category-filter" className="text-sm font-medium">
             Category:
           </label>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger id="category-filter" className="w-[160px]">
+            <SelectTrigger id="category-filter" className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
@@ -272,12 +276,12 @@ export function TaskPageClient() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="sort-order" className="text-sm font-medium">
             Sort by:
           </label>
           <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as SortOrder)}>
-            <SelectTrigger id="sort-order" className="w-[140px]">
+            <SelectTrigger id="sort-order" className="w-full sm:w-[140px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -295,8 +299,8 @@ export function TaskPageClient() {
           </Button>
         </div>
 
-        <div className="flex-grow sm:flex-grow-0 sm:ml-auto">
-          <Button onClick={handlePrioritize} disabled={isPrioritizing} className="w-full sm:w-auto">
+        <div className="w-full sm:w-auto sm:ml-auto">
+          <Button onClick={handlePrioritize} disabled={isPrioritizing} className="w-full">
             <Bot className="mr-2 h-4 w-4" />
             {isPrioritizing ? 'Prioritizing...' : 'Prioritize with AI'}
           </Button>
