@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListTodo, LayoutDashboard, LogOut, Bot } from 'lucide-react';
+import { ListTodo, LogOut, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -25,7 +25,6 @@ import {
 
 const menuItems = [
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 export function PrimaryNav() {
