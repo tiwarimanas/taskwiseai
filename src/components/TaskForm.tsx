@@ -21,18 +21,11 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
-import type { Task, Category, Subtask } from '@/lib/types';
-import { CalendarIcon, PlusCircle, Sparkles, Trash2, X } from 'lucide-react';
+import type { Task, Subtask } from '@/lib/types';
+import { CalendarIcon, PlusCircle, Sparkles, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -43,7 +36,6 @@ const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
   description: z.string().optional(),
   deadline: z.date().nullable(),
-  category: z.string().min(1, 'Please select a category'),
   subtasks: z.array(z.object({ text: z.string().min(1, 'Subtask cannot be empty') })),
 });
 
@@ -51,12 +43,11 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
   task?: Task | null;
-  categories: Category[];
-  onSave: (task: Omit<Task, 'id' | 'completed'> & { id?: string }) => void;
+  onSave: (task: Omit<Task, 'id' | 'completed' | 'category'> & { id?: string }) => void;
   onClose: () => void;
 }
 
-export function TaskForm({ task, categories, onSave, onClose }: TaskFormProps) {
+export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -66,7 +57,6 @@ export function TaskForm({ task, categories, onSave, onClose }: TaskFormProps) {
       title: task?.title || '',
       description: task?.description || '',
       deadline: task?.deadline || null,
-      category: task?.category || '',
       subtasks: task?.subtasks?.map((s) => ({ text: s.text })) || [],
     },
   });
@@ -169,65 +159,35 @@ export function TaskForm({ task, categories, onSave, onClose }: TaskFormProps) {
             )}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="deadline"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deadline</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <FormField
+            control={form.control}
+            name="deadline"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Deadline</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                      </Button>
                     </FormControl>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <div className="flex items-center gap-2">
-                            <cat.icon className="h-4 w-4" />
-                            {cat.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <div>
             <FormLabel>Subtasks</FormLabel>

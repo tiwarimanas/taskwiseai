@@ -18,14 +18,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { Task, Category } from '@/lib/types';
+import type { Task } from '@/lib/types';
 import { format } from 'date-fns';
-import { Calendar, Edit, Trash2, HelpCircle } from 'lucide-react';
+import { Calendar, Edit, Trash2, HelpCircle, Tag } from 'lucide-react';
 import { TaskSubtaskList } from './TaskSubtaskList';
 
 interface TaskItemProps {
   task: Task;
-  category?: Category;
   onToggleComplete: (taskId: string, completed: boolean) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
@@ -34,7 +33,6 @@ interface TaskItemProps {
 
 export function TaskItem({
   task,
-  category,
   onToggleComplete,
   onEdit,
   onDelete,
@@ -79,7 +77,7 @@ export function TaskItem({
         </div>
       </CardHeader>
       <CardContent>
-        {(task.deadline || category) && (
+        {(task.deadline || task.category) && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-4">
             {task.deadline && (
               <div className="flex items-center gap-1">
@@ -89,10 +87,10 @@ export function TaskItem({
                 </span>
               </div>
             )}
-            {category && (
+            {task.category && (
               <Badge variant="outline" className="flex items-center gap-1.5 py-1">
-                <category.icon className="h-3.5 w-3.5" />
-                {category.name}
+                <Tag className="h-3.5 w-3.5" />
+                {task.category}
               </Badge>
             )}
           </div>

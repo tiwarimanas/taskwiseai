@@ -1,5 +1,3 @@
-import type { LucideIcon } from 'lucide-react';
-
 export type Subtask = {
   id: string;
   text: string;
@@ -16,10 +14,4 @@ export type Task = {
   completed: boolean;
   priorityScore?: number;
   reason?: string;
-};
-
-export type Category = {
-  id: string;
-  name: string;
-  icon: LucideIcon;
 };

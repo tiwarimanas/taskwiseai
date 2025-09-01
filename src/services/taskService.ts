@@ -15,21 +15,14 @@ import {
 
 // A type guard to check if a value is a Firestore Timestamp
 function isTimestamp(value: any): value is Timestamp {
-    return value && typeof value.toDate === 'function';
+  return value && typeof value.toDate === 'function';
 }
 
 // Type for task data coming from Firestore
-type FirestoreTask = Omit<Task, 'id' | 'deadline' | 'createdAt'> & {
+type FirestoreTask = Omit<Task, 'id' | 'deadline'> & {
   deadline: Timestamp | null;
   createdAt: Timestamp;
 };
-
-// Type for data being sent to Firestore
-type TaskDataToSave = Omit<Task, 'id' | 'completed' | 'subtasks'> & {
-    createdAt?: any;
-    subtasks: { text: string; completed: boolean; id: string }[];
-};
-
 
 const getTasksCollection = (userId: string) => {
   return collection(db, 'users', userId, 'tasks');
@@ -37,15 +30,15 @@ const getTasksCollection = (userId: string) => {
 
 // Converts a Firestore document to our local Task type
 const fromFirestore = (doc: any): Task => {
-    const data = doc.data() as FirestoreTask;
-    return {
-        id: doc.id,
-        ...data,
-        deadline: data.deadline ? data.deadline.toDate() : null,
-        // Ensure subtasks is always an array
-        subtasks: data.subtasks || [],
-    };
-}
+  const data = doc.data() as FirestoreTask;
+  return {
+    id: doc.id,
+    ...data,
+    deadline: data.deadline ? data.deadline.toDate() : null,
+    // Ensure subtasks is always an array
+    subtasks: data.subtasks || [],
+  };
+};
 
 export const getTasks = async (userId: string): Promise<Task[]> => {
   if (!userId) return [];
@@ -56,37 +49,37 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
 };
 
 export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
-    const tasksCollection = getTasksCollection(userId);
-    
-    // Convert deadline Date to Firestore Timestamp if it exists
-    const dataToSave = {
-        ...taskData,
-        deadline: taskData.deadline ? Timestamp.fromDate(taskData.deadline) : null,
-        createdAt: serverTimestamp(),
-        completed: false, // Ensure new tasks are not completed
-    };
+  const tasksCollection = getTasksCollection(userId);
 
-    const docRef = await addDoc(tasksCollection, dataToSave);
+  // Convert deadline Date to Firestore Timestamp if it exists
+  const dataToSave = {
+    ...taskData,
+    deadline: taskData.deadline ? Timestamp.fromDate(taskData.deadline) : null,
+    createdAt: serverTimestamp(),
+    completed: false, // Ensure new tasks are not completed
+  };
 
-    return {
-        id: docRef.id,
-        ...taskData,
-        completed: false,
-    };
+  const docRef = await addDoc(tasksCollection, dataToSave);
+
+  return {
+    id: docRef.id,
+    ...taskData,
+    completed: false,
+  };
 };
 
-export const updateTask = async (userId: string, taskId: string, taskData: Partial<Task>): Promise<void> => {
+export const updateTask = async (userId: string, taskId: string, taskData: Partial<Omit<Task, 'id'>>): Promise<void> => {
   const taskDoc = doc(db, 'users', userId, 'tasks', taskId);
-  
+
   const dataToUpdate: { [key: string]: any } = { ...taskData };
-  
+
   // Convert deadline Date to Firestore Timestamp if it's being updated
-  if (taskData.deadline) {
+  if (taskData.deadline && taskData.deadline instanceof Date) {
     dataToUpdate.deadline = Timestamp.fromDate(taskData.deadline);
   } else if (taskData.hasOwnProperty('deadline') && taskData.deadline === null) {
     dataToUpdate.deadline = null;
   }
-  
+
   await updateDoc(taskDoc, dataToUpdate);
 };
 

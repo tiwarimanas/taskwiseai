@@ -1,11 +1,10 @@
 'use client';
 
 import { TaskItem } from './TaskItem';
-import type { Task, Category } from '@/lib/types';
+import type { Task } from '@/lib/types';
 
 interface TaskListProps {
   tasks: Task[];
-  categories: Category[];
   onToggleComplete: (taskId: string, completed: boolean) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
@@ -14,7 +13,6 @@ interface TaskListProps {
 
 export function TaskList({
   tasks,
-  categories,
   onToggleComplete,
   onEdit,
   onDelete,
@@ -29,15 +27,12 @@ export function TaskList({
     );
   }
 
-  const findCategory = (categoryId: string) => categories.find((c) => c.id === categoryId);
-
   return (
     <div className="space-y-4">
       {tasks.map((task) => (
         <TaskItem
           key={task.id}
           task={task}
-          category={findCategory(task.category)}
           onToggleComplete={onToggleComplete}
           onEdit={onEdit}
           onDelete={onDelete}
