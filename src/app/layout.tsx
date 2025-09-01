@@ -5,6 +5,8 @@ import { SidebarNav } from '@/components/SidebarNav';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { MobileTopBar } from '@/components/MobileTopBar';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 export const metadata: Metadata = {
   title: 'TaskWise AI',
@@ -30,10 +32,14 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <SidebarProvider>
-              <Sidebar>
+              <Sidebar className="hidden md:block">
                 <SidebarNav />
               </Sidebar>
-              <SidebarInset>{children}</SidebarInset>
+              <MobileTopBar />
+              <SidebarInset>
+                <div className="pb-20 md:pb-0">{children}</div>
+              </SidebarInset>
+              <MobileBottomNav />
             </SidebarProvider>
             <Toaster />
           </AuthProvider>

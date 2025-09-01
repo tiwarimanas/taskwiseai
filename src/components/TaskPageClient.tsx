@@ -20,7 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
-import { SidebarTrigger } from './ui/sidebar';
 
 type SortOrder = 'priority' | 'deadline' | 'title';
 
@@ -226,7 +225,6 @@ export function TaskPageClient() {
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-2">
-            <SidebarTrigger className="md:hidden"/>
             <div>
                 <h1 className="text-3xl font-bold font-headline">My Tasks</h1>
                 <p className="text-muted-foreground">Manage your tasks efficiently with AI.</p>

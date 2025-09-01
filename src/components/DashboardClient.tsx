@@ -9,7 +9,6 @@ import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { useToast } from '@/hooks/use-toast';
-import { SidebarTrigger } from './ui/sidebar';
 
 export function DashboardClient() {
   const { user } = useAuth();
@@ -72,7 +71,6 @@ export function DashboardClient() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="mb-8 flex items-center gap-2">
-        <SidebarTrigger className="md:hidden" />
         <div>
             <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
             <p className="text-muted-foreground">A visual overview of your productivity.</p>
