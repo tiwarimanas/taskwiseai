@@ -1,5 +1,10 @@
 import { TaskPageClient } from '@/components/TaskPageClient';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function TasksPage() {
-  return <TaskPageClient />;
+  return (
+    <ProtectedRoute>
+      <TaskPageClient />
+    </ProtectedRoute>
+  );
 }
