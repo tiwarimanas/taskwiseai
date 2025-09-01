@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { SidebarNav } from '@/components/SidebarNav';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { MobileTopBar } from '@/components/MobileTopBar';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { PrimaryNav } from '@/components/PrimaryNav';
 
 export const metadata: Metadata = {
   title: 'TaskWise AI',
@@ -31,16 +29,11 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <SidebarProvider>
-              <Sidebar className="hidden md:block">
-                <SidebarNav />
-              </Sidebar>
+            <div className="md:pl-16">
               <MobileTopBar />
-              <SidebarInset>
-                <div className="pb-20 md:pb-0">{children}</div>
-              </SidebarInset>
-              <MobileBottomNav />
-            </SidebarProvider>
+              <main className="pb-16 md:pb-0">{children}</main>
+            </div>
+            <PrimaryNav />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
