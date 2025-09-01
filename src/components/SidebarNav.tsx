@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Skeleton } from './ui/skeleton';
+import { ThemeToggle } from './ThemeToggle';
 
 const menuItems = [
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
@@ -56,37 +57,44 @@ export function SidebarNav() {
         ))}
       </SidebarMenu>
       <SidebarFooter>
-        {loading ? (
-          <div className="flex items-center gap-2 p-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <div className="flex-1 space-y-1">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-2 w-24" />
+         <div className="flex items-center justify-between p-2">
+            {loading ? (
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-2 w-24" />
+                </div>
             </div>
-          </div>
-        ) : user ? (
-          <div className="flex items-center gap-3 p-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
-              <AvatarFallback>
-                {user.displayName?.charAt(0).toUpperCase() ?? 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">{user.displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            ) : user ? (
+            <div className="flex items-center gap-3 overflow-hidden">
+                <Avatar className="h-8 w-8">
+                <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
+                <AvatarFallback>
+                    {user.displayName?.charAt(0).toUpperCase() ?? 'U'}
+                </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium truncate">{user.displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
             </div>
-            <SidebarMenuButton
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              onClick={logout}
-              tooltip="Log out"
-            >
-              <LogOut />
-            </SidebarMenuButton>
-          </div>
-        ) : null}
+            ) : null}
+            <div className="flex items-center gap-1">
+                <ThemeToggle />
+                {user && (
+                    <SidebarMenuButton
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={logout}
+                        tooltip="Log out"
+                    >
+                        <LogOut />
+                    </SidebarMenuButton>
+                )}
+            </div>
+        </div>
       </SidebarFooter>
     </div>
   );
