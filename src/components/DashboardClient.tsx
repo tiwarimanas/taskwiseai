@@ -1,36 +1,43 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Task, Category } from '@/lib/types';
-import { initialCategories, initialTasks } from '@/lib/initial-data';
+import { initialCategories } from '@/lib/initial-data';
 import { DashboardCharts } from './DashboardCharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
+import { useAuth } from '@/context/AuthContext';
+import * as taskService from '@/services/taskService';
+import { useToast } from '@/hooks/use-toast';
 
 export function DashboardClient() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      const storedTasks = localStorage.getItem('tasks');
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks).map((t: any) => ({
-          ...t,
-          deadline: t.deadline ? new Date(t.deadline) : null,
-        }));
-        setTasks(parsedTasks);
-      } else {
-        setTasks(initialTasks);
-      }
+      const userTasks = await taskService.getTasks(user.uid);
+      setTasks(userTasks);
     } catch (error) {
-      console.error('Failed to parse tasks from localStorage', error);
-      setTasks(initialTasks);
+      console.error('Failed to fetch tasks for dashboard:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not fetch dashboard data.',
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const dashboardData = useMemo(() => {
     const totalTasks = tasks.length;
@@ -41,14 +48,14 @@ export function DashboardClient() {
     ).length;
 
     const taskStatusData = [
-      { name: 'Pending', value: pendingTasks, fill: 'var(--color-pending)' },
-      { name: 'Completed', value: completedTasks, fill: 'var(--color-completed)' },
+      { name: 'Pending', value: pendingTasks, fill: 'hsl(var(--chart-1))' },
+      { name: 'Completed', value: completedTasks, fill: 'hsl(var(--chart-2))' },
     ];
 
     const tasksByCategoryData = categories.map((cat) => ({
       name: cat.name,
       tasks: tasks.filter((task) => task.category === cat.id).length,
-      fill: `var(--color-${cat.id})`,
+      fill: `hsl(var(--chart-${categories.findIndex(c => c.id === cat.id) + 1}))`,
     }));
 
     return {

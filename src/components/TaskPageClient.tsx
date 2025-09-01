@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import type { Task, Category, Subtask } from '@/lib/types';
-import { initialTasks, initialCategories } from '@/lib/initial-data';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { Task, Category } from '@/lib/types';
+import { initialCategories } from '@/lib/initial-data';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -17,11 +17,15 @@ import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 import { intelligentTaskPrioritization } from '@/ai/flows/intelligent-task-prioritization';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import * as taskService from '@/services/taskService';
+import { Skeleton } from './ui/skeleton';
 
 type SortOrder = 'priority' | 'deadline' | 'title';
 
 export function TaskPageClient() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories] = useState<Category[]>(initialCategories);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -31,76 +35,127 @@ export function TaskPageClient() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('priority');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isPrioritizing, setIsPrioritizing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
     try {
-      const storedTasks = localStorage.getItem('tasks');
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks).map((t: any) => ({
-          ...t,
-          deadline: t.deadline ? new Date(t.deadline) : null,
-        }));
-        setTasks(parsedTasks);
-      } else {
-        setTasks(initialTasks);
-      }
+      const userTasks = await taskService.getTasks(user.uid);
+      setTasks(userTasks);
     } catch (error) {
-      console.error('Failed to parse tasks from localStorage', error);
-      setTasks(initialTasks);
+      console.error('Failed to fetch tasks:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not fetch your tasks. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [user, toast]);
 
   useEffect(() => {
-    if (tasks.length > 0) {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-    }
-  }, [tasks]);
+    fetchTasks();
+  }, [fetchTasks]);
 
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
-    if (taskData.id) {
-      setTasks(tasks.map((t) => (t.id === taskData.id ? { ...t, ...taskData } : t)));
-    } else {
-      const newTask: Task = {
-        ...taskData,
-        id: Date.now().toString(),
-        completed: false,
-      };
-      setTasks([newTask, ...tasks]);
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
+    if (!user) return;
+
+    try {
+        if (taskData.id) {
+            // This is an update
+            await taskService.updateTask(user.uid, taskData.id, taskData);
+        } else {
+            // This is a new task
+            await taskService.addTask(user.uid, taskData);
+        }
+        await fetchTasks(); // Refetch all tasks to get the latest state
+    } catch (error) {
+        console.error('Failed to save task:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: 'Could not save your task. Please try again.',
+        });
     }
+
     setIsFormOpen(false);
     setEditingTask(null);
-  };
+};
+
 
   const handleEdit = (task: Task) => {
     setEditingTask(task);
     setIsFormOpen(true);
   };
 
-  const handleDelete = (taskId: string) => {
-    setTasks(tasks.filter((t) => t.id !== taskId));
+  const handleDelete = async (taskId: string) => {
+    if (!user) return;
+    const originalTasks = [...tasks];
+    setTasks(tasks.filter((t) => t.id !== taskId)); // Optimistic update
+    try {
+      await taskService.deleteTask(user.uid, taskId);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      setTasks(originalTasks); // Revert on error
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: 'Could not delete the task.',
+      });
+    }
   };
 
-  const handleToggleComplete = (taskId: string, completed: boolean) => {
-    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed } : t)));
+  const handleToggleComplete = async (taskId: string, completed: boolean) => {
+    if (!user) return;
+    const originalTasks = [...tasks];
+    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed } : t))); // Optimistic
+    try {
+      await taskService.updateTask(user.uid, taskId, { completed });
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      setTasks(originalTasks); // Revert
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update task status.',
+      });
+    }
   };
 
-  const handleSubtaskChange = (taskId: string, subtaskId: string, completed: boolean) => {
+  const handleSubtaskChange = async (taskId: string, subtaskId: string, completed: boolean) => {
+    if (!user) return;
+    const originalTasks = [...tasks];
+    
+    let updatedSubtasks: any[] = [];
     setTasks(
       tasks.map((task) => {
         if (task.id === taskId) {
-          return {
-            ...task,
-            subtasks: task.subtasks.map((subtask) =>
-              subtask.id === subtaskId ? { ...subtask, completed } : subtask
-            ),
-          };
+          updatedSubtasks = task.subtasks.map((subtask) =>
+            subtask.id === subtaskId ? { ...subtask, completed } : subtask
+          );
+          return { ...task, subtasks: updatedSubtasks };
         }
         return task;
       })
-    );
+    ); // Optimistic
+
+    try {
+      await taskService.updateTask(user.uid, taskId, { subtasks: updatedSubtasks });
+    } catch (error) {
+       console.error('Failed to update subtask:', error);
+       setTasks(originalTasks); // Revert
+       toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update subtask.',
+      });
+    }
   };
 
   const handlePrioritize = async () => {
+    if (!user) return;
     setIsPrioritizing(true);
     try {
       const tasksToPrioritize = tasks
@@ -119,16 +174,12 @@ export function TaskPageClient() {
       
       const prioritizedResult = await intelligentTaskPrioritization(tasksToPrioritize);
 
-      setTasks((currentTasks) => {
-        const prioritizedMap = new Map(prioritizedResult.map((p) => [p.id, p]));
-        return currentTasks.map((task) => {
-          if (prioritizedMap.has(task.id)) {
-            const pTask = prioritizedMap.get(task.id)!;
-            return { ...task, priorityScore: pTask.priorityScore, reason: pTask.reason };
-          }
-          return task;
-        });
-      });
+      const updatePromises = prioritizedResult.map(pTask => 
+        taskService.updateTask(user.uid, pTask.id, { priorityScore: pTask.priorityScore, reason: pTask.reason })
+      );
+      await Promise.all(updatePromises);
+      await fetchTasks();
+
       setSortOrder('priority');
       setSortDirection('desc');
       toast({
@@ -253,14 +304,22 @@ export function TaskPageClient() {
       </div>
 
       <main>
-        <TaskList
-          tasks={filteredAndSortedTasks}
-          categories={categories}
-          onToggleComplete={handleToggleComplete}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onSubtaskChange={handleSubtaskChange}
-        />
+        {isLoading ? (
+            <div className="space-y-4">
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-40 w-full" />
+            </div>
+        ) : (
+            <TaskList
+            tasks={filteredAndSortedTasks}
+            categories={categories}
+            onToggleComplete={handleToggleComplete}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onSubtaskChange={handleSubtaskChange}
+            />
+        )}
       </main>
     </div>
   );
