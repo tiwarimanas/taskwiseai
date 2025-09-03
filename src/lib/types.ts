@@ -10,7 +10,6 @@ export type Task = {
   description: string;
   subtasks: Subtask[];
   deadline: Date | null;
-  category: string;
   completed: boolean;
   priorityScore?: number;
   reason?: string;

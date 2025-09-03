@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/tooltip';
 import type { Task } from '@/lib/types';
 import { format } from 'date-fns';
-import { Calendar, Edit, Trash2, HelpCircle, Tag, ChevronDown, ShieldAlert, ShieldCheck, User, Archive } from 'lucide-react';
+import { Calendar, Edit, Trash2, HelpCircle, ChevronDown, ShieldAlert, ShieldCheck, User, Archive } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -75,7 +75,7 @@ export function TaskItem({
                 {task.title}
               </CardTitle>
 
-              {(task.deadline || task.category || task.eisenhowerQuadrant) && (
+              {(task.deadline || task.eisenhowerQuadrant) && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-2">
                   {task.deadline && (
                     <div className="flex items-center gap-1">
@@ -84,12 +84,6 @@ export function TaskItem({
                         {format(task.deadline, 'MMM d, yyyy')}
                       </span>
                     </div>
-                  )}
-                  {task.category && (
-                    <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">
-                      <Tag className="h-3.5 w-3.5" />
-                      {task.category}
-                    </Badge>
                   )}
                   {task.eisenhowerQuadrant && QuadrantIcon && (
                      <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">

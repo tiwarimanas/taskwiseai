@@ -26,9 +26,11 @@ const getTasksCollection = (userId: string) => {
 // Converts a Firestore document to our local Task type
 const fromFirestore = (doc: any): Task => {
   const data = doc.data() as FirestoreTask;
+  // Omitting category from the returned object if it exists in Firestore
+  const { category, ...rest } = data as any;
   return {
     id: doc.id,
-    ...data,
+    ...rest,
     deadline: data.deadline ? data.deadline.toDate() : null,
     subtasks: data.subtasks || [],
   };

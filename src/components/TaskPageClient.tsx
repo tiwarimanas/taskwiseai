@@ -17,7 +17,6 @@ import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 import { intelligentTaskPrioritization } from '@/ai/flows/intelligent-task-prioritization';
 import { categorizeTaskEisenhower } from '@/ai/flows/eisenhower-matrix-categorization';
-import { generateTaskCategory } from '@/ai/flows/generate-task-category';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
@@ -35,7 +34,6 @@ export function TaskPageClient() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const [filterCategory, setFilterCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('priority');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -47,18 +45,14 @@ export function TaskPageClient() {
     try {
       const { title, description, deadline } = taskData;
 
-      const [categoryResult, eisenhowerResult] = await Promise.all([
-        generateTaskCategory({ title, description: description || '' }),
-        categorizeTaskEisenhower({
-          title,
-          description: description || '',
-          deadline: deadline ? deadline.toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
-      ]);
+      const eisenhowerResult = await categorizeTaskEisenhower({
+        title,
+        description: description || '',
+        deadline: deadline ? deadline.toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      });
 
       const taskWithAiData = {
         ...taskData,
-        category: categoryResult.category,
         eisenhowerQuadrant: eisenhowerResult.quadrant,
       };
 
@@ -179,21 +173,15 @@ export function TaskPageClient() {
       setIsPrioritizing(false);
     }
   };
-  
-  const uniqueCategories = useMemo(() => {
-    const allCategories = tasks.map(t => t.category).filter(Boolean);
-    return [...new Set(allCategories)];
-  }, [tasks]);
 
   const filteredAndSortedTasks = useMemo(() => {
     return tasks
       .filter((task) => {
-        const categoryMatch = filterCategory === 'all' || task.category === filterCategory;
         const searchMatch =
           searchTerm === '' ||
           task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        return categoryMatch && searchMatch;
+        return searchMatch;
       })
       .sort((a, b) => {
         let compare = 0;
@@ -213,7 +201,7 @@ export function TaskPageClient() {
         }
         return sortDirection === 'asc' ? compare : -compare;
       });
-  }, [tasks, filterCategory, sortOrder, sortDirection, searchTerm]);
+  }, [tasks, sortOrder, sortDirection, searchTerm]);
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -260,25 +248,7 @@ export function TaskPageClient() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label htmlFor="category-filter" className="text-sm font-medium sr-only">
-            Category
-          </label>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger id="category-filter" className="w-full sm:w-[160px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {uniqueCategories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+        
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="sort-order" className="text-sm font-medium sr-only">
             Sort by

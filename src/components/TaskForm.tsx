@@ -43,7 +43,7 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
   task?: Task | null;
-  onSave: (task: Omit<Task, 'id' | 'completed' | 'category' | 'eisenhowerQuadrant'> & { id?: string }) => void;
+  onSave: (task: Omit<Task, 'id' | 'completed' | 'eisenhowerQuadrant'> & { id?: string }) => void;
   onClose: () => void;
 }
 
