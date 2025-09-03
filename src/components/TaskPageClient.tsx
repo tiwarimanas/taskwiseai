@@ -3,14 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus, SortAsc, SortDesc } from 'lucide-react';
+import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays } from 'lucide-react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
@@ -21,6 +14,7 @@ import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
+import { cn } from '@/lib/utils';
 
 type SortOrder = 'eisenhower' | 'deadline';
 
@@ -130,6 +124,15 @@ export function TaskPageClient() {
       });
     }
   };
+  
+  const handleSortChange = (newSortOrder: SortOrder) => {
+    if (newSortOrder === sortOrder) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortOrder(newSortOrder);
+      setSortDirection('asc');
+    }
+  };
 
   const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
@@ -183,29 +186,34 @@ export function TaskPageClient() {
       
       <CountdownWidget />
 
-      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-          <label htmlFor="sort-order" className="text-sm font-medium">
-            Sort by:
-          </label>
-          <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as SortOrder)}>
-            <SelectTrigger id="sort-order" className="w-full sm:w-[160px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="eisenhower">Eisenhower Matrix</SelectItem>
-              <SelectItem value="deadline">Deadline</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-          >
-            {sortDirection === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-          </Button>
-        </div>
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+        <Button
+            variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => handleSortChange('eisenhower')}
+            className="gap-2"
+        >
+            <ArrowDownUp className="h-4 w-4" />
+            <span>Eisenhower</span>
+            {sortOrder === 'eisenhower' && (
+                sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
+            )}
+        </Button>
+        <Button
+            variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => handleSortChange('deadline')}
+            className="gap-2"
+        >
+            <CalendarDays className="h-4 w-4" />
+            <span>Deadline</span>
+            {sortOrder === 'deadline' && (
+                sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
+            )}
+        </Button>
       </div>
+
 
       <main>
         {isLoading ? (
