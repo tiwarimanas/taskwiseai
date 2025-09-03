@@ -35,10 +35,10 @@ interface TaskItemProps {
 }
 
 const quadrantConfig = {
-  UrgentImportant: { label: 'Urgent & Important', icon: ShieldAlert },
-  NotUrgentImportant: { label: 'Important', icon: ShieldCheck },
-  UrgentNotImportant: { label: 'Urgent', icon: User },
-  NotUrgentNotImportant: { label: 'Not Urgent or Important', icon: Archive },
+    UrgentImportant: { label: 'Urgent & Important', icon: ShieldAlert, className: 'bg-green-500/10 border-green-500/40 text-green-700 dark:text-green-400' },
+    NotUrgentImportant: { label: 'Important', icon: ShieldCheck, className: 'bg-blue-500/10 border-blue-500/40 text-blue-700 dark:text-blue-400' },
+    UrgentNotImportant: { label: 'Urgent', icon: User, className: 'bg-yellow-500/10 border-yellow-500/40 text-yellow-700 dark:text-yellow-400' },
+    NotUrgentNotImportant: { label: 'Not Urgent or Important', icon: Archive, className: 'bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400' },
 };
 
 
@@ -52,8 +52,7 @@ export function TaskItem({
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = task.description || (task.subtasks && task.subtasks.length > 0);
 
-  const QuadrantIcon = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant]?.icon : null;
-  const quadrantLabel = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant]?.label : null;
+  const quadrantDetails = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant] : null;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -80,14 +79,14 @@ export function TaskItem({
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       <span className={task.deadline && !task.completed && new Date() > task.deadline ? 'text-destructive font-medium' : ''}>
-                        {format(task.deadline, 'MMM d, yyyy')}
+                        {format(task.deadline, 'MMM d, yy')}
                       </span>
                     </div>
                   )}
-                  {task.eisenhowerQuadrant && QuadrantIcon && (
-                     <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">
-                      <QuadrantIcon className="h-3.5 w-3.5" />
-                      {quadrantLabel}
+                  {quadrantDetails && (
+                     <Badge variant="outline" className={cn("flex items-center gap-1.5 py-0.5", quadrantDetails.className)}>
+                      <quadrantDetails.icon className="h-3.5 w-3.5" />
+                      {quadrantDetails.label}
                     </Badge>
                   )}
                 </div>
