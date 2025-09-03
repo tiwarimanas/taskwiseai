@@ -32,13 +32,14 @@ export function TaskPageClient() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [sortOrder, setSortOrder] = useState<SortOrder>('eisenhower');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
-
+    setIsSaving(true);
     try {
       const { title, description, deadline } = taskData;
 
@@ -58,6 +59,8 @@ export function TaskPageClient() {
       } else {
         await taskService.addTask(user.uid, taskWithAiData);
       }
+      setIsFormOpen(false);
+      setEditingTask(null);
     } catch (error) {
       console.error('Failed to save task:', error);
       toast({
@@ -65,10 +68,9 @@ export function TaskPageClient() {
         title: 'Save Failed',
         description: 'Could not save your task. Please try again.',
       });
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsFormOpen(false);
-    setEditingTask(null);
   };
 
   const handleEdit = (task: Task) => {
@@ -164,6 +166,7 @@ export function TaskPageClient() {
         <Dialog
           open={isFormOpen}
           onOpenChange={(isOpen) => {
+            if (isSaving) return;
             setIsFormOpen(isOpen);
             if (!isOpen) setEditingTask(null);
           }}
@@ -179,6 +182,7 @@ export function TaskPageClient() {
               task={editingTask}
               onSave={handleSaveTask}
               onClose={() => setIsFormOpen(false)}
+              isSaving={isSaving}
             />
           )}
         </Dialog>

@@ -25,7 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import type { Task, Subtask } from '@/lib/types';
-import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
 import { useState } from 'react';
@@ -50,9 +50,10 @@ interface TaskFormProps {
   task?: Task | null;
   onSave: (task: Omit<Task, 'id' | 'completed' | 'eisenhowerQuadrant'> & { id?: string }) => void;
   onClose: () => void;
+  isSaving: boolean;
 }
 
-export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
+export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -244,12 +245,13 @@ export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
       </Form>
       <DialogFooter>
         <DialogClose asChild>
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
         </DialogClose>
-        <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
-          {task ? 'Save Changes' : 'Create Task'}
+        <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSaving}>
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSaving ? (task ? 'Saving...' : 'Creating...') : (task ? 'Save Changes' : 'Create Task')}
         </Button>
       </DialogFooter>
     </DialogContent>
