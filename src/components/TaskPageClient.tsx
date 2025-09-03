@@ -10,12 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Bot, Plus, Search, SortAsc, SortDesc } from 'lucide-react';
+import { Plus, SortAsc, SortDesc } from 'lucide-react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
-import { intelligentTaskPrioritization } from '@/ai/flows/intelligent-task-prioritization';
 import { categorizeTaskEisenhower } from '@/ai/flows/eisenhower-matrix-categorization';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -24,7 +22,14 @@ import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
 
-type SortOrder = 'priority' | 'deadline' | 'title';
+type SortOrder = 'eisenhower' | 'deadline';
+
+const quadrantOrder: Record<Task['eisenhowerQuadrant'] & string, number> = {
+  UrgentImportant: 1,
+  NotUrgentImportant: 2,
+  UrgentNotImportant: 3,
+  NotUrgentNotImportant: 4,
+};
 
 export function TaskPageClient() {
   const { toast } = useToast();
@@ -34,10 +39,8 @@ export function TaskPageClient() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('priority');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [isPrioritizing, setIsPrioritizing] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('eisenhower');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
@@ -128,80 +131,23 @@ export function TaskPageClient() {
     }
   };
 
-  const handlePrioritize = async () => {
-    if (!user) return;
-    setIsPrioritizing(true);
-    try {
-      const tasksToPrioritize = tasks
-        .filter((t) => !t.completed)
-        .map((t) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description || '',
-          deadline: t.deadline ? t.deadline.toISOString() : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-        }));
-
-      if (tasksToPrioritize.length === 0) {
-        toast({ title: 'No tasks to prioritize', description: 'All your tasks are completed!' });
-        return;
-      }
-      
-      const prioritizedResult = await intelligentTaskPrioritization(tasksToPrioritize);
-
-      const updatePromises = prioritizedResult.map((pTask) =>
-        taskService.updateTask(user.uid, pTask.id, { 
-          priorityScore: pTask.priorityScore, 
-          reason: pTask.reason,
-        })
-      );
-      await Promise.all(updatePromises);
-      
-      setSortOrder('priority');
-      setSortDirection('desc');
-      toast({
-        title: 'Tasks Prioritized!',
-        description: 'Your tasks have been intelligently sorted by priority score.',
-      });
-    } catch (error) {
-      console.error('AI prioritization failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Prioritization Failed',
-        description: 'Could not prioritize tasks. Please try again.',
-      });
-    } finally {
-      setIsPrioritizing(false);
-    }
-  };
-
-  const filteredAndSortedTasks = useMemo(() => {
-    return tasks
-      .filter((task) => {
-        const searchMatch =
-          searchTerm === '' ||
-          task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        return searchMatch;
-      })
-      .sort((a, b) => {
-        let compare = 0;
-        switch (sortOrder) {
-          case 'priority':
-            compare = (b.priorityScore ?? -1) - (a.priorityScore ?? -1);
-            if (compare === 0) {
-              compare = (a.deadline?.getTime() ?? Infinity) - (b.deadline?.getTime() ?? Infinity);
-            }
-            break;
-          case 'deadline':
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      let compare = 0;
+      switch (sortOrder) {
+        case 'eisenhower':
+          compare = (quadrantOrder[a.eisenhowerQuadrant || 'NotUrgentNotImportant']) - (quadrantOrder[b.eisenhowerQuadrant || 'NotUrgentNotImportant']);
+          if (compare === 0) {
             compare = (a.deadline?.getTime() ?? Infinity) - (b.deadline?.getTime() ?? Infinity);
-            break;
-          case 'title':
-            compare = a.title.localeCompare(b.title);
-            break;
-        }
-        return sortDirection === 'asc' ? compare : -compare;
-      });
-  }, [tasks, sortOrder, sortDirection, searchTerm]);
+          }
+          break;
+        case 'deadline':
+          compare = (a.deadline?.getTime() ?? Infinity) - (b.deadline?.getTime() ?? Infinity);
+          break;
+      }
+      return sortDirection === 'asc' ? compare : -compare;
+    });
+  }, [tasks, sortOrder, sortDirection]);
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -238,29 +184,17 @@ export function TaskPageClient() {
       <CountdownWidget />
 
       <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-        <div className="relative w-full sm:w-auto sm:flex-grow">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search tasks..."
-            className="pl-8 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label htmlFor="sort-order" className="text-sm font-medium sr-only">
-            Sort by
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+          <label htmlFor="sort-order" className="text-sm font-medium">
+            Sort by:
           </label>
           <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as SortOrder)}>
-            <SelectTrigger id="sort-order" className="w-full sm:w-[140px]">
+            <SelectTrigger id="sort-order" className="w-full sm:w-[160px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="priority">Priority</SelectItem>
+              <SelectItem value="eisenhower">Eisenhower Matrix</SelectItem>
               <SelectItem value="deadline">Deadline</SelectItem>
-              <SelectItem value="title">Title</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -269,13 +203,6 @@ export function TaskPageClient() {
             onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
           >
             {sortDirection === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-          </Button>
-        </div>
-
-        <div className="w-full sm:w-auto">
-          <Button onClick={handlePrioritize} disabled={isPrioritizing} className="w-full">
-            <Bot className="mr-2 h-4 w-4" />
-            {isPrioritizing ? 'Prioritizing...' : 'Prioritize with AI'}
           </Button>
         </div>
       </div>
@@ -289,7 +216,7 @@ export function TaskPageClient() {
           </div>
         ) : (
           <TaskList
-            tasks={filteredAndSortedTasks}
+            tasks={sortedTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEdit}
             onDelete={handleDelete}
