@@ -2,7 +2,6 @@
 
 import {
   Card,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -94,43 +93,41 @@ export function TaskItem({
                 </div>
               )}
             </div>
-            {task.priorityScore !== undefined && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 text-sm font-semibold cursor-default">
-                      {Math.round(task.priorityScore)}
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">{task.reason}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {hasDetails && (
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                  <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} />
+            <div className="flex items-center">
+                {task.priorityScore !== undefined && (
+                <TooltipProvider>
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 text-sm font-semibold cursor-default p-2">
+                        {Math.round(task.priorityScore)}
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="max-w-xs">{task.reason}</p>
+                    </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                )}
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => onEdit(task)}>
+                    <Edit className="h-4 w-4" />
                 </Button>
-              </CollapsibleTrigger>
-            )}
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-destructive hover:text-destructive" onClick={() => onDelete(task.id)}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+                {hasDetails && (
+                <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                    <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} />
+                    </Button>
+                </CollapsibleTrigger>
+                )}
+            </div>
           </div>
         </CardHeader>
         
         <CollapsibleContent>
           <TaskDetails task={task} onSubtaskChange={onSubtaskChange} />
-          <CardFooter className="justify-end gap-2 pt-2">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(task.id)}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </CardFooter>
         </CollapsibleContent>
       </Card>
     </Collapsible>
