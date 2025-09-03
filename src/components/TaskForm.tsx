@@ -159,8 +159,8 @@ export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
               <FormItem>
                 <FormLabel>Deadline</FormLabel>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant={cn(format(field.value || '', 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(new Date())}>Today</Button>
-                  <Button type="button" variant={cn(format(field.value || '', 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(addDays(new Date(), 1))}>Tomorrow</Button>
+                  <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(new Date())}>Today</Button>
+                  <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(addDays(new Date(), 1))}>Tomorrow</Button>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
