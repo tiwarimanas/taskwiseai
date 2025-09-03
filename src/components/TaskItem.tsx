@@ -58,7 +58,7 @@ export function TaskItem({
               {task.title}
             </CardTitle>
             {task.description && (
-              <CardDescription className="mt-1 truncate">{task.description}</CardDescription>
+              <CardDescription className="mt-1">{task.description}</CardDescription>
             )}
           </div>
           {task.priorityScore !== undefined && (
