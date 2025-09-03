@@ -31,7 +31,6 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange
         >
           <AuthProvider>
             <div className="md:pl-16">
