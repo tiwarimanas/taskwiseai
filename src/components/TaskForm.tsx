@@ -25,12 +25,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import type { Task, Subtask } from '@/lib/types';
-import { CalendarIcon, PlusCircle, Sparkles, Trash2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { useState } from 'react';
 import { generateTaskDetails } from '@/ai/flows/generate-task-details';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
@@ -50,6 +55,7 @@ interface TaskFormProps {
 export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -74,6 +80,7 @@ export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
     }
 
     setIsGenerating(true);
+    setIsAdvancedOpen(true);
     try {
       const result = await generateTaskDetails({ title });
       form.setValue('description', result.description, { shouldValidate: true });
@@ -114,7 +121,7 @@ export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
       <DialogHeader>
         <DialogTitle>{task ? 'Edit Task' : 'Create Task'}</DialogTitle>
         <DialogDescription>
-          {task ? 'Update the details of your task.' : 'Fill in the details for your new task. Use the magic of AI to generate details from a title.'}
+          {task ? 'Update the details of your task.' : 'Fill in the details for your new task. Use AI to generate details from a title.'}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -147,77 +154,92 @@ export function TaskForm({ task, onSave, onClose }: TaskFormProps) {
 
           <FormField
             control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Add a more detailed description..." className="resize-y" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="deadline"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Deadline</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
-                  </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant={cn(format(field.value || '', 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(new Date())}>Today</Button>
+                  <Button type="button" variant={cn(format(field.value || '', 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(addDays(new Date(), 1))}>Tomorrow</Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          size="sm"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div>
-            <FormLabel>Subtasks</FormLabel>
-            <div className="space-y-2 mt-2">
-              {fields.map((field, index) => (
-                <FormField
-                  key={field.id}
-                  control={form.control}
-                  name={`subtasks.${index}.text`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder={`Subtask ${index + 1}`} {...field} />
-                        </FormControl>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={() => append({ text: '' })}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Subtask
+          <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" className="w-full justify-start px-0">
+                <ChevronDown className={cn('mr-2 h-4 w-4 transition-transform', isAdvancedOpen && 'rotate-180')} />
+                Advanced
               </Button>
-            </div>
-          </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add a more detailed description..." className="resize-y" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div>
+                <FormLabel>Subtasks</FormLabel>
+                <div className="space-y-2 mt-2">
+                  {fields.map((field, index) => (
+                    <FormField
+                      key={field.id}
+                      control={form.control}
+                      name={`subtasks.${index}.text`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input placeholder={`Subtask ${index + 1}`} {...field} />
+                            </FormControl>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ text: '' })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Subtask
+                  </Button>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </form>
       </Form>
       <DialogFooter>
