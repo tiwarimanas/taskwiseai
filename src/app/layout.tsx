@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/components/ThemeProvider';
 import { MobileTopBar } from '@/components/MobileTopBar';
 import { PrimaryNav } from '@/components/PrimaryNav';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { TaskProvider } from '@/context/TaskContext';
 
 export const metadata: Metadata = {
   title: 'TaskWise AI',
@@ -27,18 +28,16 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <div className="md:pl-16">
-              <MobileTopBar />
-              <main className="pb-16 md:pb-0">{children}</main>
-            </div>
-            <PrimaryNav />
-            <Toaster />
+            <TaskProvider>
+              <div className="md:pl-16">
+                <MobileTopBar />
+                <main className="pb-16 md:pb-0">{children}</main>
+              </div>
+              <PrimaryNav />
+              <Toaster />
+            </TaskProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

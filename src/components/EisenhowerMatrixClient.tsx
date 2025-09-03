@@ -1,15 +1,16 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
 import { Task } from '@/lib/types';
-import * as taskService from '@/services/taskService';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
+import { useTasks } from '@/context/TaskContext';
+import { useAuth } from '@/context/AuthContext';
+import * as taskService from '@/services/taskService';
 
 type Quadrant = 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
 
@@ -37,103 +38,50 @@ function TaskMatrixItem({ task, isDragging }: { task: Task; isDragging: boolean 
 
 export function EisenhowerMatrixClient() {
   const { user } = useAuth();
+  const { tasks, isLoading } = useTasks();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [categorizedTasks, setCategorizedTasks] = useState<Record<Quadrant, Task[]>>({
-    UrgentImportant: [],
-    NotUrgentImportant: [],
-    UrgentNotImportant: [],
-    NotUrgentNotImportant: [],
-  });
 
-  useEffect(() => {
-    async function fetchAndCategorizeTasks() {
-      if (!user) return;
-      setIsLoading(true);
-      try {
-        const userTasks = await taskService.getTasks(user.uid);
-
-        const newCategorizedTasks: Record<Quadrant, Task[]> = {
-          UrgentImportant: [],
-          NotUrgentImportant: [],
-          UrgentNotImportant: [],
-          NotUrgentNotImportant: [],
-        };
-
-        userTasks.forEach((task) => {
-          const quadrant = task.eisenhowerQuadrant || 'NotUrgentNotImportant'; // Default if not set
-          if (newCategorizedTasks[quadrant as Quadrant]) {
-            newCategorizedTasks[quadrant as Quadrant].push(task);
-          }
-        });
-        setCategorizedTasks(newCategorizedTasks);
-      } catch (error) {
-        console.error('Failed to fetch tasks:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not fetch your tasks for the matrix.',
-        });
-      } finally {
-        setIsLoading(false);
+  const categorizedTasks = useMemo(() => {
+    const newCategorizedTasks: Record<Quadrant, Task[]> = {
+      UrgentImportant: [],
+      NotUrgentImportant: [],
+      UrgentNotImportant: [],
+      NotUrgentNotImportant: [],
+    };
+    tasks.forEach((task) => {
+      const quadrant = task.eisenhowerQuadrant || 'NotUrgentNotImportant'; // Default if not set
+      if (newCategorizedTasks[quadrant as Quadrant]) {
+        newCategorizedTasks[quadrant as Quadrant].push(task);
       }
-    }
-    fetchAndCategorizeTasks();
-  }, [user, toast]);
-  
+    });
+    return newCategorizedTasks;
+  }, [tasks]);
+
   const onDragEnd: OnDragEndResponder = async (result) => {
     const { source, destination, draggableId } = result;
-
-    // Dropped outside the list
-    if (!destination) {
-      return;
-    }
+    if (!destination || !user) return;
 
     const sourceQuadrant = source.droppableId as Quadrant;
     const destQuadrant = destination.droppableId as Quadrant;
-
-    // Moved to the same position in the same quadrant
-    if (sourceQuadrant === destQuadrant && source.index === destination.index) {
-      return;
-    }
-
-    // Find the task that was moved
-    const taskToMove = categorizedTasks[sourceQuadrant].find(t => t.id === draggableId);
+    if (sourceQuadrant === destQuadrant && source.index === destination.index) return;
+    
+    const taskToMove = tasks.find(t => t.id === draggableId);
     if (!taskToMove) return;
 
-    // Optimistic UI Update
-    const newCategorizedTasks = { ...categorizedTasks };
-    // Remove from source
-    const sourceTasks = Array.from(newCategorizedTasks[sourceQuadrant]);
-    sourceTasks.splice(source.index, 1);
-    newCategorizedTasks[sourceQuadrant] = sourceTasks;
-
-    // Add to destination
-    const destTasks = Array.from(newCategorizedTasks[destQuadrant]);
-    destTasks.splice(destination.index, 0, taskToMove);
-    newCategorizedTasks[destQuadrant] = destTasks;
-
-    setCategorizedTasks(newCategorizedTasks);
-
-    // Update Firebase
     try {
-      await taskService.updateTask(user!.uid, draggableId, { eisenhowerQuadrant: destQuadrant });
+      await taskService.updateTask(user.uid, draggableId, { eisenhowerQuadrant: destQuadrant });
       toast({
         title: 'Task Moved',
         description: `"${taskToMove.title}" moved to "${quadrantConfig[destQuadrant].title}".`,
       });
     } catch (error) {
       console.error('Failed to update task quadrant:', error);
-      // Revert UI on failure
-      const revertedTasks = { ...categorizedTasks };
-      revertedTasks[sourceQuadrant].splice(source.index, 0, taskToMove);
-      revertedTasks[destQuadrant].splice(destination.index, 1);
-      setCategorizedTasks(categorizedTasks);
       toast({
         variant: 'destructive',
         title: 'Update Failed',
         description: 'Could not move the task. Please try again.',
       });
+      // Note: No need for manual UI revert, onSnapshot will handle it.
     }
   };
 

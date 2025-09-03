@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,13 +23,15 @@ import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
+import { useTasks } from '@/context/TaskContext';
 
 type SortOrder = 'priority' | 'deadline' | 'title';
 
 export function TaskPageClient() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, isLoading } = useTasks();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -38,61 +40,33 @@ export function TaskPageClient() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('priority');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isPrioritizing, setIsPrioritizing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchTasks = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const userTasks = await taskService.getTasks(user.uid);
-      setTasks(userTasks);
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not fetch your tasks. Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
-  
+
     try {
       const { title, description, deadline } = taskData;
-      
-      // AI Categorization for both new and updated tasks
+
       const [categoryResult, eisenhowerResult] = await Promise.all([
         generateTaskCategory({ title, description: description || '' }),
         categorizeTaskEisenhower({
           title,
           description: description || '',
-          deadline: deadline ? deadline.toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Provide a far-future deadline if null
+          deadline: deadline ? deadline.toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         }),
       ]);
-  
+
       const taskWithAiData = {
         ...taskData,
         category: categoryResult.category,
         eisenhowerQuadrant: eisenhowerResult.quadrant,
       };
-  
+
       if (taskData.id) {
-        // Update existing task
         await taskService.updateTask(user.uid, taskData.id, taskWithAiData);
       } else {
-        // Add new task
         await taskService.addTask(user.uid, taskWithAiData);
       }
-      
-      await fetchTasks(); // Refetch all tasks to get the latest state
     } catch (error) {
       console.error('Failed to save task:', error);
       toast({
@@ -101,11 +75,10 @@ export function TaskPageClient() {
         description: 'Could not save your task. Please try again.',
       });
     }
-  
+
     setIsFormOpen(false);
     setEditingTask(null);
   };
-  
 
   const handleEdit = (task: Task) => {
     setEditingTask(task);
@@ -114,13 +87,10 @@ export function TaskPageClient() {
 
   const handleDelete = async (taskId: string) => {
     if (!user) return;
-    const originalTasks = [...tasks];
-    setTasks(tasks.filter((t) => t.id !== taskId)); // Optimistic update
     try {
       await taskService.deleteTask(user.uid, taskId);
     } catch (error) {
       console.error('Failed to delete task:', error);
-      setTasks(originalTasks); // Revert on error
       toast({
         variant: 'destructive',
         title: 'Delete Failed',
@@ -131,13 +101,10 @@ export function TaskPageClient() {
 
   const handleToggleComplete = async (taskId: string, completed: boolean) => {
     if (!user) return;
-    const originalTasks = [...tasks];
-    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed } : t))); // Optimistic
     try {
       await taskService.updateTask(user.uid, taskId, { completed });
     } catch (error) {
       console.error('Failed to update task status:', error);
-      setTasks(originalTasks); // Revert
       toast({
         variant: 'destructive',
         title: 'Update Failed',
@@ -148,26 +115,17 @@ export function TaskPageClient() {
 
   const handleSubtaskChange = async (taskId: string, subtaskId: string, completed: boolean) => {
     if (!user) return;
-    const originalTasks = [...tasks];
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
 
-    let updatedSubtasks: any[] = [];
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === taskId) {
-          updatedSubtasks = task.subtasks.map((subtask) =>
-            subtask.id === subtaskId ? { ...subtask, completed } : subtask
-          );
-          return { ...task, subtasks: updatedSubtasks };
-        }
-        return task;
-      })
-    ); // Optimistic
+    const updatedSubtasks = task.subtasks.map((subtask) =>
+      subtask.id === subtaskId ? { ...subtask, completed } : subtask
+    );
 
     try {
       await taskService.updateTask(user.uid, taskId, { subtasks: updatedSubtasks });
     } catch (error) {
       console.error('Failed to update subtask:', error);
-      setTasks(originalTasks); // Revert
       toast({
         variant: 'destructive',
         title: 'Update Failed',
@@ -185,7 +143,7 @@ export function TaskPageClient() {
         .map((t) => ({
           id: t.id,
           title: t.title,
-          description: t.description,
+          description: t.description || '',
           deadline: t.deadline ? t.deadline.toISOString() : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
         }));
 
@@ -203,8 +161,7 @@ export function TaskPageClient() {
         })
       );
       await Promise.all(updatePromises);
-      await fetchTasks();
-
+      
       setSortOrder('priority');
       setSortDirection('desc');
       toast({
@@ -235,7 +192,7 @@ export function TaskPageClient() {
         const searchMatch =
           searchTerm === '' ||
           task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.description.toLowerCase().includes(searchTerm.toLowerCase());
+          (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
         return categoryMatch && searchMatch;
       })
       .sort((a, b) => {
@@ -244,7 +201,6 @@ export function TaskPageClient() {
           case 'priority':
             compare = (b.priorityScore ?? -1) - (a.priorityScore ?? -1);
             if (compare === 0) {
-              // secondary sort by deadline
               compare = (a.deadline?.getTime() ?? Infinity) - (b.deadline?.getTime() ?? Infinity);
             }
             break;
@@ -357,9 +313,9 @@ export function TaskPageClient() {
       <main>
         {isLoading ? (
           <div className="space-y-4">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
           </div>
         ) : (
           <TaskList
