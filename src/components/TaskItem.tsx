@@ -2,8 +2,6 @@
 
 import {
   Card,
-  CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -11,7 +9,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +18,6 @@ import {
 import type { Task } from '@/lib/types';
 import { format } from 'date-fns';
 import { Calendar, Edit, Trash2, HelpCircle, Tag, ChevronDown } from 'lucide-react';
-import { TaskSubtaskList } from './TaskSubtaskList';
 import {
   Collapsible,
   CollapsibleContent,
@@ -114,18 +110,17 @@ export function TaskItem({
         
         <CollapsibleContent>
           <TaskDetails task={task} onSubtaskChange={onSubtaskChange} />
+          <CardFooter className="justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(task.id)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </CardFooter>
         </CollapsibleContent>
-
-        <CardFooter className="justify-end gap-2 pt-2">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(task.id)}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </Button>
-        </CardFooter>
       </Card>
     </Collapsible>
   );
