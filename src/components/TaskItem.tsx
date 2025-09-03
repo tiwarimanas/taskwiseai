@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/tooltip';
 import type { Task } from '@/lib/types';
 import { format } from 'date-fns';
-import { Calendar, Edit, Trash2, HelpCircle, Tag, ChevronDown } from 'lucide-react';
+import { Calendar, Edit, Trash2, HelpCircle, Tag, ChevronDown, ShieldAlert, ShieldCheck, User, Archive } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -35,6 +35,14 @@ interface TaskItemProps {
   onSubtaskChange: (taskId: string, subtaskId: string, completed: boolean) => void;
 }
 
+const quadrantConfig = {
+  UrgentImportant: { label: 'Urgent & Important', icon: ShieldAlert },
+  NotUrgentImportant: { label: 'Important', icon: ShieldCheck },
+  UrgentNotImportant: { label: 'Urgent', icon: User },
+  NotUrgentNotImportant: { label: 'Not Urgent or Important', icon: Archive },
+};
+
+
 export function TaskItem({
   task,
   onToggleComplete,
@@ -44,6 +52,9 @@ export function TaskItem({
 }: TaskItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = task.description || (task.subtasks && task.subtasks.length > 0);
+
+  const QuadrantIcon = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant]?.icon : null;
+  const quadrantLabel = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant]?.label : null;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -64,7 +75,7 @@ export function TaskItem({
                 {task.title}
               </CardTitle>
 
-              {(task.deadline || task.category) && (
+              {(task.deadline || task.category || task.eisenhowerQuadrant) && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-2">
                   {task.deadline && (
                     <div className="flex items-center gap-1">
@@ -78,6 +89,12 @@ export function TaskItem({
                     <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">
                       <Tag className="h-3.5 w-3.5" />
                       {task.category}
+                    </Badge>
+                  )}
+                  {task.eisenhowerQuadrant && QuadrantIcon && (
+                     <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">
+                      <QuadrantIcon className="h-3.5 w-3.5" />
+                      {quadrantLabel}
                     </Badge>
                   )}
                 </div>
