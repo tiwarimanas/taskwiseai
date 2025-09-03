@@ -16,3 +16,9 @@ export type Task = {
   reason?: string;
   eisenhowerQuadrant?: 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
 };
+
+export type Countdown = {
+  id: string;
+  title: string;
+  date: Date;
+};
