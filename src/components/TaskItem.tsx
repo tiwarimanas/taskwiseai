@@ -42,7 +42,7 @@ export function TaskItem({
 
   return (
     <Card className={task.completed ? 'bg-muted/50' : ''}>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-start gap-4">
           <Checkbox
             className="mt-1.5"
@@ -53,11 +53,13 @@ export function TaskItem({
           <div className="flex-1">
             <CardTitle
               id={`task-title-${task.id}`}
-              className={task.completed ? 'text-muted-foreground line-through' : ''}
+              className={`text-xl ${task.completed ? 'text-muted-foreground line-through' : ''}`}
             >
               {task.title}
             </CardTitle>
-            <CardDescription className="mt-1">{task.description}</CardDescription>
+            {task.description && (
+              <CardDescription className="mt-1 truncate">{task.description}</CardDescription>
+            )}
           </div>
           {task.priorityScore !== undefined && (
             <TooltipProvider>
@@ -76,9 +78,9 @@ export function TaskItem({
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="py-0">
         {(task.deadline || task.category) && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-3">
             {task.deadline && (
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
@@ -88,20 +90,20 @@ export function TaskItem({
               </div>
             )}
             {task.category && (
-              <Badge variant="outline" className="flex items-center gap-1.5 py-1">
+              <Badge variant="outline" className="flex items-center gap-1.5 py-0.5">
                 <Tag className="h-3.5 w-3.5" />
                 {task.category}
               </Badge>
             )}
           </div>
         )}
-        <Separator />
+        {task.subtasks && task.subtasks.length > 0 && <Separator />}
         <TaskSubtaskList
           subtasks={task.subtasks}
           onSubtaskChange={(subtaskId, completed) => onSubtaskChange(task.id, subtaskId, completed)}
         />
       </CardContent>
-      <CardFooter className="justify-end gap-2">
+      <CardFooter className="justify-end gap-2 pt-3">
         <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit

@@ -62,22 +62,36 @@ export function TaskPageClient() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed' | 'category' | 'eisenhowerQuadrant'> & { id?: string }) => {
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
-
+  
     try {
+      const { title, description, deadline } = taskData;
+      
+      // AI Categorization for both new and updated tasks
+      const [categoryResult, eisenhowerResult] = await Promise.all([
+        generateTaskCategory({ title, description: description || '' }),
+        categorizeTaskEisenhower({
+          title,
+          description: description || '',
+          deadline: deadline ? deadline.toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Provide a far-future deadline if null
+        }),
+      ]);
+  
+      const taskWithAiData = {
+        ...taskData,
+        category: categoryResult.category,
+        eisenhowerQuadrant: eisenhowerResult.quadrant,
+      };
+  
       if (taskData.id) {
-        // This is an update, don't regenerate category
-        await taskService.updateTask(user.uid, taskData.id, taskData);
+        // Update existing task
+        await taskService.updateTask(user.uid, taskData.id, taskWithAiData);
       } else {
-        // This is a new task, generate category with AI
-        const { category } = await generateTaskCategory({
-          title: taskData.title,
-          description: taskData.description || '',
-        });
-        const taskWithCategory = { ...taskData, category };
-        await taskService.addTask(user.uid, taskWithCategory);
+        // Add new task
+        await taskService.addTask(user.uid, taskWithAiData);
       }
+      
       await fetchTasks(); // Refetch all tasks to get the latest state
     } catch (error) {
       console.error('Failed to save task:', error);
@@ -87,10 +101,11 @@ export function TaskPageClient() {
         description: 'Could not save your task. Please try again.',
       });
     }
-
+  
     setIsFormOpen(false);
     setEditingTask(null);
   };
+  
 
   const handleEdit = (task: Task) => {
     setEditingTask(task);
@@ -179,25 +194,12 @@ export function TaskPageClient() {
         return;
       }
       
-      const [prioritizedResult, eisenhowerResult] = await Promise.all([
-        intelligentTaskPrioritization(tasksToPrioritize),
-        Promise.all(tasksToPrioritize.map(t => categorizeTaskEisenhower({
-            title: t.title,
-            description: t.description,
-            deadline: t.deadline,
-        })))
-      ]);
-
-      const eisenhowerMap = tasksToPrioritize.reduce((acc, task, index) => {
-        acc[task.id] = eisenhowerResult[index].quadrant;
-        return acc;
-      }, {} as Record<string, string>);
+      const prioritizedResult = await intelligentTaskPrioritization(tasksToPrioritize);
 
       const updatePromises = prioritizedResult.map((pTask) =>
         taskService.updateTask(user.uid, pTask.id, { 
           priorityScore: pTask.priorityScore, 
           reason: pTask.reason,
-          eisenhowerQuadrant: eisenhowerMap[pTask.id],
         })
       );
       await Promise.all(updatePromises);
@@ -207,7 +209,7 @@ export function TaskPageClient() {
       setSortDirection('desc');
       toast({
         title: 'Tasks Prioritized!',
-        description: 'Your tasks have been intelligently sorted and categorized in the Eisenhower Matrix.',
+        description: 'Your tasks have been intelligently sorted by priority score.',
       });
     } catch (error) {
       console.error('AI prioritization failed:', error);
