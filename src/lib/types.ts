@@ -14,4 +14,5 @@ export type Task = {
   completed: boolean;
   priorityScore?: number;
   reason?: string;
+  eisenhowerQuadrant?: 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
 };

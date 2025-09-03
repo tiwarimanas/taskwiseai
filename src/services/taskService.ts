@@ -48,7 +48,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
   return snapshot.docs.map(fromFirestore);
 };
 
-export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
+export const addTask = async (userId: string, taskData: Omit<Task, 'id' | 'completed' | 'eisenhowerQuadrant'>): Promise<Task> => {
   const tasksCollection = getTasksCollection(userId);
 
   // Convert deadline Date to Firestore Timestamp if it exists

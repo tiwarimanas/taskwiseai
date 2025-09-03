@@ -16,11 +16,13 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 import { intelligentTaskPrioritization } from '@/ai/flows/intelligent-task-prioritization';
+import { categorizeTaskEisenhower } from '@/ai/flows/eisenhower-matrix-categorization';
 import { generateTaskCategory } from '@/ai/flows/generate-task-category';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
+import { CountdownWidget } from './CountdownWidget';
 
 type SortOrder = 'priority' | 'deadline' | 'title';
 
@@ -60,7 +62,7 @@ export function TaskPageClient() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed' | 'category'> & { id?: string }) => {
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed' | 'category' | 'eisenhowerQuadrant'> & { id?: string }) => {
     if (!user) return;
 
     try {
@@ -176,11 +178,27 @@ export function TaskPageClient() {
         toast({ title: 'No tasks to prioritize', description: 'All your tasks are completed!' });
         return;
       }
+      
+      const [prioritizedResult, eisenhowerResult] = await Promise.all([
+        intelligentTaskPrioritization(tasksToPrioritize),
+        Promise.all(tasksToPrioritize.map(t => categorizeTaskEisenhower({
+            title: t.title,
+            description: t.description,
+            deadline: t.deadline,
+        })))
+      ]);
 
-      const prioritizedResult = await intelligentTaskPrioritization(tasksToPrioritize);
+      const eisenhowerMap = tasksToPrioritize.reduce((acc, task, index) => {
+        acc[task.id] = eisenhowerResult[index].quadrant;
+        return acc;
+      }, {} as Record<string, string>);
 
       const updatePromises = prioritizedResult.map((pTask) =>
-        taskService.updateTask(user.uid, pTask.id, { priorityScore: pTask.priorityScore, reason: p.reason })
+        taskService.updateTask(user.uid, pTask.id, { 
+          priorityScore: pTask.priorityScore, 
+          reason: pTask.reason,
+          eisenhowerQuadrant: eisenhowerMap[pTask.id],
+        })
       );
       await Promise.all(updatePromises);
       await fetchTasks();
@@ -189,7 +207,7 @@ export function TaskPageClient() {
       setSortDirection('desc');
       toast({
         title: 'Tasks Prioritized!',
-        description: 'Your tasks have been intelligently sorted by priority.',
+        description: 'Your tasks have been intelligently sorted and categorized in the Eisenhower Matrix.',
       });
     } catch (error) {
       console.error('AI prioritization failed:', error);
@@ -270,6 +288,8 @@ export function TaskPageClient() {
           )}
         </Dialog>
       </header>
+      
+      <CountdownWidget />
 
       <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
         <div className="relative w-full sm:w-auto sm:flex-grow">
