@@ -14,10 +14,10 @@ import { cn } from '@/lib/utils';
 type Quadrant = 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
 
 const quadrantConfig: Record<Quadrant, { title: string; description: string; className: string }> = {
-  UrgentImportant: { title: 'Urgent & Important', description: 'Do First', className: 'bg-red-500/10 border-red-500/40' },
+  UrgentImportant: { title: 'Urgent & Important', description: 'Do First', className: 'bg-green-500/10 border-green-500/40' },
   NotUrgentImportant: { title: 'Not Urgent & Important', description: 'Schedule', className: 'bg-blue-500/10 border-blue-500/40' },
   UrgentNotImportant: { title: 'Urgent & Not Important', description: 'Delegate', className: 'bg-yellow-500/10 border-yellow-500/40' },
-  NotUrgentNotImportant: { title: 'Not Urgent & Not Important', description: 'Delete', className: 'bg-green-500/10 border-green-500/40' },
+  NotUrgentNotImportant: { title: 'Not Urgent & Not Important', description: 'Delete', className: 'bg-red-500/10 border-red-500/40' },
 };
 
 function TaskMatrixItem({ task, isDragging }: { task: Task; isDragging: boolean }) {
