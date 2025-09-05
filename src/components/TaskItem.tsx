@@ -56,11 +56,11 @@ export function TaskItem({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <Card className={task.completed ? 'bg-muted/50' : ''}>
-        <CardHeader className="pb-4">
+      <Card className={cn('rounded-xl shadow-none', task.completed ? 'bg-muted/50' : '')}>
+        <CardHeader className="p-4">
           <div className="flex items-start gap-4">
             <Checkbox
-              className="mt-1.5"
+              className="mt-1"
               checked={task.completed}
               onCheckedChange={(checked) => onToggleComplete(task.id, !!checked)}
               aria-labelledby={`task-title-${task.id}`}
@@ -68,16 +68,16 @@ export function TaskItem({
             <div className="flex-1">
               <CardTitle
                 id={`task-title-${task.id}`}
-                className={`text-lg ${task.completed ? 'text-muted-foreground line-through' : ''}`}
+                className={`text-base font-medium ${task.completed ? 'text-muted-foreground line-through' : ''}`}
               >
                 {task.title}
               </CardTitle>
 
               {(task.deadline || task.eisenhowerQuadrant) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
                   {task.deadline && (
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
+                      <Calendar className="h-3.5 w-3.5" />
                       <span className={task.deadline && !task.completed && new Date() > task.deadline ? 'text-destructive font-medium' : ''}>
                         {format(task.deadline, 'MMM d, yy')}
                       </span>
@@ -92,7 +92,7 @@ export function TaskItem({
                 </div>
               )}
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center -mr-2 -my-2">
                 {task.priorityScore !== undefined && (
                 <TooltipProvider>
                     <Tooltip>
