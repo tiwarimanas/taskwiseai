@@ -11,6 +11,7 @@ import type { Task } from '@/lib/types';
 export function AiQuoteWidget() {
   const { tasks, isLoading: tasksLoading } = useTasks();
   const [quote, setQuote] = useState('');
+  const [author, setAuthor] = useState('');
   const [isGenerating, setIsGenerating] = useState(true);
 
   const tasksForQuote = useMemo(() => {
@@ -28,10 +29,12 @@ export function AiQuoteWidget() {
       try {
         const result = await generateMotivationalQuote(tasksToAnalyze);
         setQuote(result.quote);
+        setAuthor(result.author);
       } catch (error) {
         console.error('Failed to get AI quote:', error);
         // Fallback quote
         setQuote("The secret of getting ahead is getting started.");
+        setAuthor("Mark Twain");
       } finally {
         setIsGenerating(false);
       }
@@ -56,6 +59,7 @@ export function AiQuoteWidget() {
           ) : (
             <blockquote className="text-center">
               <p className="text-lg font-quote italic text-muted-foreground">"{quote}"</p>
+              <footer className="mt-2 text-sm text-muted-foreground font-quote">- {author}</footer>
             </blockquote>
           )}
         </CardContent>

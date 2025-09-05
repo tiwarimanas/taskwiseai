@@ -21,7 +21,8 @@ const GenerateMotivationalQuoteInputSchema = z.array(TaskSchema).describe('An ar
 export type GenerateMotivationalQuoteInput = z.infer<typeof GenerateMotivationalQuoteInputSchema>;
 
 const GenerateMotivationalQuoteOutputSchema = z.object({
-  quote: z.string().describe('A short, inspiring quote related to the user\'s task status. It should not be a generic productivity quote.'),
+  quote: z.string().describe('A short, inspiring quote from a real, famous personality related to the user\'s task status.'),
+  author: z.string().describe('The name of the person who said the quote.'),
 });
 export type GenerateMotivationalQuoteOutput = z.infer<typeof GenerateMotivationalQuoteOutputSchema>;
 
@@ -33,14 +34,14 @@ const generateQuotePrompt = ai.definePrompt({
   name: 'generateMotivationalQuotePrompt',
   input: { schema: GenerateMotivationalQuoteInputSchema },
   output: { schema: GenerateMotivationalQuoteOutputSchema },
-  prompt: `You are a wise and encouraging mentor. Look at the user's list of tasks and generate a short, unique, and inspiring quote (about 10-20 words) that reflects their current situation.
+  prompt: `You are a curator of inspiring quotes. Look at the user's list of tasks and find a short, relevant quote from a real, famous person (e.g., inventor, leader, artist, philosopher) that reflects their current situation. Provide the quote and the author.
 
-- If they have many tasks, inspire them to start.
-- If they have few tasks, encourage them to focus.
-- If they've completed many tasks, praise their progress.
-- If they have no tasks, motivate them to think about their goals.
+- If they have many tasks, find a quote about getting started or overcoming overwhelm.
+- If they have few tasks, find a quote about focus or quality.
+- If they've completed many tasks, find a quote about achievement or perseverance.
+- If they have no tasks, find a quote about planning or purpose.
 
-Do not be generic. Make the quote feel personal and insightful based on the list.
+The quote should feel insightful and encouraging.
 
 Here are the tasks:
 {{#each this}}
@@ -60,7 +61,7 @@ const generateMotivationalQuoteFlow = ai.defineFlow(
   async (input) => {
     // Prevent calling the AI with an empty list of tasks for a custom message.
     if (input.length === 0) {
-      return { quote: "An empty list is a blank canvas. What will you create today?" };
+      return { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" };
     }
     const { output } = await generateQuotePrompt(input);
     return output!;
