@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays } from 'lucide-react';
+import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX } from 'lucide-react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
@@ -17,6 +17,7 @@ import { useTasks } from '@/context/TaskContext';
 import { cn } from '@/lib/utils';
 
 type SortOrder = 'eisenhower' | 'deadline';
+type FilterType = 'all' | 'active';
 
 const quadrantOrder: Record<Task['eisenhowerQuadrant'] & string, number> = {
   UrgentImportant: 1,
@@ -36,6 +37,7 @@ export function TaskPageClient() {
 
   const [sortOrder, setSortOrder] = useState<SortOrder>('eisenhower');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filter, setFilter] = useState<FilterType>('all');
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
@@ -136,8 +138,15 @@ export function TaskPageClient() {
     }
   };
 
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
+  const filteredAndSortedTasks = useMemo(() => {
+    const filtered = tasks.filter(task => {
+        if (filter === 'active') {
+            return !task.completed;
+        }
+        return true;
+    });
+
+    return [...filtered].sort((a, b) => {
       let compare = 0;
       switch (sortOrder) {
         case 'eisenhower':
@@ -152,7 +161,7 @@ export function TaskPageClient() {
       }
       return sortDirection === 'asc' ? compare : -compare;
     });
-  }, [tasks, sortOrder, sortDirection]);
+  }, [tasks, sortOrder, sortDirection, filter]);
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -190,32 +199,55 @@ export function TaskPageClient() {
       
       <CountdownWidget />
 
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
-        <Button
-            variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => handleSortChange('eisenhower')}
-            className="gap-2"
-        >
-            <ArrowDownUp className="h-4 w-4" />
-            <span>Eisenhower</span>
-            {sortOrder === 'eisenhower' && (
-                sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
-            )}
-        </Button>
-        <Button
-            variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => handleSortChange('deadline')}
-            className="gap-2"
-        >
-            <CalendarDays className="h-4 w-4" />
-            <span>Deadline</span>
-            {sortOrder === 'deadline' && (
-                sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
-            )}
-        </Button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+          <Button
+              variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => handleSortChange('eisenhower')}
+              className="gap-2"
+          >
+              <ArrowDownUp className="h-4 w-4" />
+              <span>Matrix</span>
+              {sortOrder === 'eisenhower' && (
+                  sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
+              )}
+          </Button>
+          <Button
+              variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => handleSortChange('deadline')}
+              className="gap-2"
+          >
+              <CalendarDays className="h-4 w-4" />
+              <span>Deadline</span>
+              {sortOrder === 'deadline' && (
+                  sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
+              )}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+            <Button
+                variant={filter === 'all' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilter('all')}
+                className="gap-2"
+            >
+                <List className="h-4 w-4" />
+                <span>Show All</span>
+            </Button>
+            <Button
+                variant={filter === 'active' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilter('active')}
+                className="gap-2"
+            >
+                <ListX className="h-4 w-4" />
+                <span>Hide Completed</span>
+            </Button>
+        </div>
       </div>
 
 
@@ -228,7 +260,7 @@ export function TaskPageClient() {
           </div>
         ) : (
           <TaskList
-            tasks={sortedTasks}
+            tasks={filteredAndSortedTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEdit}
             onDelete={handleDelete}
