@@ -3,8 +3,25 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX } from 'lucide-react';
+import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX, MoreVertical } from 'lucide-react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 import { categorizeTaskEisenhower } from '@/ai/flows/eisenhower-matrix-categorization';
@@ -14,10 +31,10 @@ import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
-import { cn } from '@/lib/utils';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
+type DeleteAction = 'completed' | 'all' | null;
 
 const quadrantOrder: Record<Task['eisenhowerQuadrant'] & string, number> = {
   UrgentImportant: 1,
@@ -38,6 +55,9 @@ export function TaskPageClient() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('eisenhower');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filter, setFilter] = useState<FilterType>('all');
+  
+  const [deleteAction, setDeleteAction] = useState<DeleteAction>(null);
+
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
     if (!user) return;
@@ -163,6 +183,46 @@ export function TaskPageClient() {
     });
   }, [tasks, sortOrder, sortDirection, filter]);
 
+  const confirmDelete = async () => {
+    if (!user || !deleteAction) return;
+
+    let tasksToDelete: Task[] = [];
+    let toastMessage = '';
+
+    if (deleteAction === 'completed') {
+      tasksToDelete = tasks.filter(t => t.completed);
+      toastMessage = 'All completed tasks have been deleted.';
+    } else if (deleteAction === 'all') {
+      tasksToDelete = tasks;
+      toastMessage = 'All tasks have been deleted.';
+    }
+    
+    setDeleteAction(null);
+
+    if (tasksToDelete.length === 0) {
+        toast({
+            title: 'No tasks to delete.',
+        });
+        return;
+    }
+    
+    try {
+      await Promise.all(tasksToDelete.map(task => taskService.deleteTask(user.uid, task.id)));
+      toast({
+        title: 'Success!',
+        description: toastMessage,
+      });
+    } catch (error) {
+      console.error(`Failed to delete tasks:`, error);
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: 'Could not delete tasks. Please try again.',
+      });
+    }
+  };
+
+
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -172,29 +232,47 @@ export function TaskPageClient() {
             <p className="text-muted-foreground">Manage your tasks efficiently with AI.</p>
           </div>
         </div>
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(isOpen) => {
-            if (isSaving) return;
-            setIsFormOpen(isOpen);
-            if (!isOpen) setEditingTask(null);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-          </DialogTrigger>
-          {isFormOpen && (
-            <TaskForm
-              task={editingTask}
-              onSave={handleSaveTask}
-              onClose={() => setIsFormOpen(false)}
-              isSaving={isSaving}
-            />
-          )}
-        </Dialog>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Dialog
+            open={isFormOpen}
+            onOpenChange={(isOpen) => {
+              if (isSaving) return;
+              setIsFormOpen(isOpen);
+              if (!isOpen) setEditingTask(null);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Task
+              </Button>
+            </DialogTrigger>
+            {isFormOpen && (
+              <TaskForm
+                task={editingTask}
+                onSave={handleSaveTask}
+                onClose={() => setIsFormOpen(false)}
+                isSaving={isSaving}
+              />
+            )}
+          </Dialog>
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="shrink-0">
+                      <MoreVertical className="h-4 w-4" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
+                      Delete completed tasks
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
+                      Delete all tasks
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
       
       <CountdownWidget />
@@ -268,6 +346,26 @@ export function TaskPageClient() {
           />
         )}
       </main>
+
+      <AlertDialog open={!!deleteAction} onOpenChange={() => setDeleteAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteAction === 'completed'
+                ? 'This action will permanently delete all completed tasks.'
+                : 'This action will permanently delete all your tasks. This cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
