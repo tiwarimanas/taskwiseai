@@ -21,3 +21,7 @@ export type Countdown = {
   title: string;
   date: Date;
 };
+
+export type UserProfile = {
+  knowledge?: string;
+};

@@ -27,7 +27,7 @@ import type { Task, Subtask } from '@/lib/types';
 import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays, parse, startOfDay } from 'date-fns';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { generateTaskDetails } from '@/ai/flows/generate-task-details';
 import { suggestTaskTime } from '@/ai/flows/suggest-task-time';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +37,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Badge } from './ui/badge';
+import * as userService from '@/services/userService';
+import { useAuth } from '@/context/AuthContext';
 
 const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
@@ -57,11 +59,27 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskFormProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [isSuggestingTime, setIsSuggestingTime] = useState(false);
   const [timeSuggestions, setTimeSuggestions] = useState<string[]>([]);
+  
+  const userKnowledgeRef = useRef<string | undefined>();
+
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user) return;
+      try {
+        const profile = await userService.getUserProfile(user.uid);
+        userKnowledgeRef.current = profile?.knowledge;
+      } catch (error) {
+        console.error('Failed to fetch user profile for AI suggestions:', error);
+      }
+    }
+    fetchProfile();
+  }, [user]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -92,7 +110,8 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
       const result = await suggestTaskTime({
         forDate: deadline.toISOString(),
         taskTitle: title,
-        existingTasks: tasksForDay.map(t => ({ title: t.title, deadline: t.deadline!.toISOString() }))
+        existingTasks: tasksForDay.map(t => ({ title: t.title, deadline: t.deadline!.toISOString() })),
+        userKnowledge: userKnowledgeRef.current,
       });
       setTimeSuggestions(result.suggestions);
 

@@ -23,6 +23,7 @@ const SuggestTaskTimeInputSchema = z.object({
   existingTasks: z.array(TaskDeadlineSchema).describe('A list of tasks already scheduled for the selected day.'),
   forDate: z.string().describe('The date (ISO string) for which to suggest times.'),
   taskTitle: z.string().describe('The title of the new task to be scheduled.'),
+  userKnowledge: z.string().optional().describe('Information about the user\'s general availability and preferences.'),
 });
 export type SuggestTaskTimeInput = z.infer<typeof SuggestTaskTimeInputSchema>;
 
@@ -42,12 +43,18 @@ const suggestTimePrompt = ai.definePrompt({
   name: 'suggestTaskTimePrompt',
   input: { schema: SuggestTaskTimeInputSchema },
   output: { schema: SuggestTaskTimeOutputSchema },
-  prompt: `You are a smart scheduling assistant. Your goal is to find up to 4 optimal time slots for a new task on a given day, considering the user's existing schedule.
+  prompt: `You are a smart scheduling assistant. Your goal is to find up to 4 optimal time slots for a new task on a given day, considering the user's existing schedule and their personal preferences.
 
 Analyze the list of existing tasks and their deadlines for the date: {{forDate}}.
 The new task to schedule is: "{{taskTitle}}".
 
+Here is some information about the user's schedule and preferences:
+{{#if userKnowledge}}
+{{userKnowledge}}
+{{else}}
 Assume standard working hours are between 08:00 and 18:00.
+{{/if}}
+
 Avoid suggesting times that are too close to other deadlines. Leave at least a 1-hour gap between tasks if possible.
 Return the suggestions as an array of strings in "HH:mm" 24-hour format.
 
