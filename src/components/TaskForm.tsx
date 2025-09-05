@@ -8,7 +8,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -196,10 +195,9 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
                 <div className="flex items-center gap-2">
                   <FormControl>
-                    <Input placeholder="e.g., Launch new marketing campaign" {...field} />
+                    <Input placeholder="Task Title (e.g., Launch new marketing campaign)" {...field} />
                   </FormControl>
                   <Button
                     type="button"
@@ -222,7 +220,6 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
             name="deadline"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Deadline</FormLabel>
                 <div className="flex items-center gap-2">
                   <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(new Date())}>Today</Button>
                   <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(addDays(new Date(), 1))}>Tomorrow</Button>
@@ -238,7 +235,7 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                          {field.value ? format(field.value, 'PPP') : <span>Pick a deadline</span>}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -258,10 +255,9 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
               name="deadlineTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Time</FormLabel>
                   <div className='flex items-center gap-2'>
                     <FormControl>
-                      <Input type="time" {...field} className="w-48"/>
+                      <Input type="time" {...field} className="w-48" placeholder="Time"/>
                     </FormControl>
                     <Button
                       type="button"
@@ -307,7 +303,6 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea placeholder="Add a more detailed description..." className="resize-y" {...field} />
                     </FormControl>
@@ -316,8 +311,7 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
                 )}
               />
 
-              <div>
-                <FormLabel>Subtasks</FormLabel>
+              <div className='space-y-2'>
                 <div className="space-y-2 mt-2">
                   {fields.map((field, index) => (
                     <FormField
@@ -339,11 +333,11 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
                       )}
                     />
                   ))}
+                </div>
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ text: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Subtask
                   </Button>
-                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
