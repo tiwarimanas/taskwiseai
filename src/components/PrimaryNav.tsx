@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListTodo, LogOut, Bot, LayoutGrid } from 'lucide-react';
+import { ListTodo, LogOut, Bot, LayoutGrid, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -26,6 +26,7 @@ import {
 const menuItems = [
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
   { href: '/matrix', label: 'Matrix', icon: LayoutGrid },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function PrimaryNav() {
@@ -95,6 +96,13 @@ export function PrimaryNav() {
                     <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
