@@ -27,7 +27,7 @@ import type { Task, Subtask } from '@/lib/types';
 import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays, parse, startOfDay } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { generateTaskDetails } from '@/ai/flows/generate-task-details';
 import { suggestTaskTime } from '@/ai/flows/suggest-task-time';
 import { useToast } from '@/hooks/use-toast';
@@ -80,15 +80,49 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
   });
   
   const deadlineValue = form.watch('deadline');
+  const titleValue = form.watch('title');
+
+  const handleSuggestTime = useCallback(async (deadline: Date, title: string) => {
+    setIsSuggestingTime(true);
+    setTimeSuggestions([]);
+    try {
+      const startOfSelectedDay = startOfDay(deadline);
+      const tasksForDay = allTasks.filter(t => t.deadline && startOfDay(t.deadline).getTime() === startOfSelectedDay.getTime());
+
+      const result = await suggestTaskTime({
+        forDate: deadline.toISOString(),
+        taskTitle: title,
+        existingTasks: tasksForDay.map(t => ({ title: t.title, deadline: t.deadline!.toISOString() }))
+      });
+      setTimeSuggestions(result.suggestions);
+
+    } catch (error) {
+      console.error('AI time suggestion failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'AI Suggestion Failed',
+        description: 'Could not suggest times. Please try again.',
+      });
+    } finally {
+      setIsSuggestingTime(false);
+    }
+  }, [allTasks, toast]);
+
+  useEffect(() => {
+    if (deadlineValue && titleValue && titleValue.length >= 3) {
+      handleSuggestTime(deadlineValue, titleValue);
+    } else {
+      setTimeSuggestions([]);
+    }
+  }, [deadlineValue, titleValue, handleSuggestTime]);
+
 
   useEffect(() => {
     if (!deadlineValue) {
       form.setValue('deadlineTime', '');
-      setTimeSuggestions([]);
-    } else {
-      setTimeSuggestions([]);
     }
   }, [deadlineValue, form]);
+
 
   const handleGenerateDetails = async () => {
     const title = form.getValues('title');
@@ -115,44 +149,6 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
       setIsGenerating(false);
     }
   };
-  
-  const handleSuggestTime = async () => {
-    const deadline = form.getValues('deadline');
-    const title = form.getValues('title');
-    if (!deadline || !title) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing Details',
-        description: 'Please select a date and enter a title first.',
-      });
-      return;
-    }
-    
-    setIsSuggestingTime(true);
-    setTimeSuggestions([]);
-    try {
-      const startOfSelectedDay = startOfDay(deadline);
-      const tasksForDay = allTasks.filter(t => t.deadline && startOfDay(t.deadline).getTime() === startOfSelectedDay.getTime());
-
-      const result = await suggestTaskTime({
-        forDate: deadline.toISOString(),
-        taskTitle: title,
-        existingTasks: tasksForDay.map(t => ({ title: t.title, deadline: t.deadline!.toISOString() }))
-      });
-      setTimeSuggestions(result.suggestions);
-
-    } catch (error) {
-      console.error('AI time suggestion failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Suggestion Failed',
-        description: 'Could not suggest times. Please try again.',
-      });
-    } finally {
-      setIsSuggestingTime(false);
-    }
-  };
-
 
   const onSubmit = (data: TaskFormValues) => {
     const newSubtasks: Subtask[] = data.subtasks.map((st, index) => {
@@ -259,16 +255,7 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
                     <FormControl>
                       <Input type="time" {...field} className="w-48" placeholder="Time"/>
                     </FormControl>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={handleSuggestTime}
-                      disabled={isSuggestingTime}
-                      aria-label="Suggest time with AI"
-                    >
-                      {isSuggestingTime ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    </Button>
+                    {isSuggestingTime && <Loader2 className="h-4 w-4 animate-spin" />}
                   </div>
                   <FormMessage />
                   {timeSuggestions.length > 0 && (
