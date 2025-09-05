@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -15,8 +14,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { Task } from '@/lib/types';
-import { format } from 'date-fns';
-import { Calendar, Edit, Trash2, HelpCircle, ChevronDown, ShieldAlert, ShieldCheck, User, Archive } from 'lucide-react';
+import { format, isPast } from 'date-fns';
+import { Calendar, Edit, Trash2, HelpCircle, ChevronDown } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -35,10 +34,10 @@ interface TaskItemProps {
 }
 
 const quadrantConfig = {
-    UrgentImportant: { label: 'Urgent & Important', icon: ShieldAlert, className: 'bg-green-500/10 border-green-500/40 text-green-700 dark:text-green-400' },
-    NotUrgentImportant: { label: 'Important', icon: ShieldCheck, className: 'bg-blue-500/10 border-blue-500/40 text-blue-700 dark:text-blue-400' },
-    UrgentNotImportant: { label: 'Urgent', icon: User, className: 'bg-yellow-500/10 border-yellow-500/40 text-yellow-700 dark:text-yellow-400' },
-    NotUrgentNotImportant: { label: 'Not Urgent or Important', icon: Archive, className: 'bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400' },
+    UrgentImportant: { className: 'bg-green-500/10' },
+    NotUrgentImportant: { className: 'bg-blue-500/10' },
+    UrgentNotImportant: { className: 'bg-yellow-500/10' },
+    NotUrgentNotImportant: { className: 'bg-red-500/10' },
 };
 
 
@@ -56,9 +55,12 @@ export function TaskItem({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <Card className={cn('rounded-xl shadow-none', task.completed ? 'bg-muted/50' : '')}>
-        <CardHeader className="p-4">
-          <div className="flex items-start gap-4">
+      <Card className={cn(
+        'rounded-xl shadow-none',
+        task.completed ? 'bg-muted/50' : (quadrantDetails?.className || 'bg-card')
+      )}>
+        <CardHeader className="p-3">
+          <div className="flex items-start gap-3">
             <Checkbox
               className="mt-1"
               checked={task.completed}
@@ -73,22 +75,16 @@ export function TaskItem({
                 {task.title}
               </CardTitle>
 
-              {(task.deadline || task.eisenhowerQuadrant) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
-                  {task.deadline && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>
-                        {format(task.deadline, 'MMM d, yy')}
-                      </span>
-                    </div>
-                  )}
-                  {quadrantDetails && (
-                     <Badge variant="outline" className={cn("flex items-center gap-1.5 py-0.5", quadrantDetails.className)}>
-                      <quadrantDetails.icon className="h-3.5 w-3.5" />
-                      {quadrantDetails.label}
-                    </Badge>
-                  )}
+              {task.deadline && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span className={cn(
+                      !task.completed && isPast(task.deadline) && 'text-destructive font-medium'
+                    )}>
+                      {format(task.deadline, 'MMM d, yy')}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
