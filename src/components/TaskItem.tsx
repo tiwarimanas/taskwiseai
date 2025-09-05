@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { Task } from '@/lib/types';
-import { format, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { Calendar, Edit, Trash2, HelpCircle, ChevronDown } from 'lucide-react';
 import {
   Collapsible,
@@ -56,7 +56,7 @@ export function TaskItem({
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <Card className={cn(
-        'rounded-xl shadow-none',
+        'rounded-xl shadow-none border-0',
         task.completed ? 'bg-muted/50' : (quadrantDetails?.className || 'bg-card')
       )}>
         <CardHeader className="p-3">
@@ -80,7 +80,7 @@ export function TaskItem({
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
                     <span className={cn(
-                      !task.completed && isPast(task.deadline) && 'text-destructive font-medium'
+                      !task.completed && 'font-medium'
                     )}>
                       {format(task.deadline, 'MMM d, yy')}
                     </span>
