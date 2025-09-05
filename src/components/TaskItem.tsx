@@ -78,7 +78,7 @@ export function TaskItem({
                   {task.deadline && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
-                      <span className={task.deadline && !task.completed && new Date() > task.deadline ? 'text-destructive font-medium' : ''}>
+                      <span>
                         {format(task.deadline, 'MMM d, yy')}
                       </span>
                     </div>
