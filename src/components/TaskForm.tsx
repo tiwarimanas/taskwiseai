@@ -186,7 +186,7 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
       <DialogHeader>
         <DialogTitle>{task ? 'Edit Task' : 'Create Task'}</DialogTitle>
         <DialogDescription>
-          {task ? 'Update the details of your task.' : 'Fill in the details for your new task. Use AI to generate details from a title.'}
+          {task ? 'Update the details of your task.' : ''}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
