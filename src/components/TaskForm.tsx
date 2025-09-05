@@ -27,8 +27,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Task, Subtask } from '@/lib/types';
 import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays } from 'date-fns';
-import { useState } from 'react';
+import { format, addDays, parse } from 'date-fns';
+import { useState, useEffect } from 'react';
 import { generateTaskDetails } from '@/ai/flows/generate-task-details';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -41,6 +41,7 @@ const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
   description: z.string().optional(),
   deadline: z.date().nullable(),
+  deadlineTime: z.string().optional(),
   subtasks: z.array(z.object({ text: z.string().min(1, 'Subtask cannot be empty') })),
 });
 
@@ -64,6 +65,7 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
       title: task?.title || '',
       description: task?.description || '',
       deadline: task?.deadline || null,
+      deadlineTime: task?.deadline ? format(task.deadline, 'HH:mm') : '',
       subtasks: task?.subtasks?.map((s) => ({ text: s.text })) || [],
     },
   });
@@ -72,6 +74,14 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
     control: form.control,
     name: 'subtasks',
   });
+  
+  const deadlineValue = form.watch('deadline');
+
+  useEffect(() => {
+    if (!deadlineValue) {
+      form.setValue('deadlineTime', '');
+    }
+  }, [deadlineValue, form]);
 
   const handleGenerateDetails = async () => {
     const title = form.getValues('title');
@@ -109,9 +119,17 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
       };
     });
 
+    let finalDeadline: Date | null = data.deadline;
+    if (data.deadline && data.deadlineTime) {
+      const datePart = format(data.deadline, 'yyyy-MM-dd');
+      const timePart = data.deadlineTime;
+      finalDeadline = parse(`${datePart}T${timePart}`, "yyyy-MM-dd'T'HH:mm", new Date());
+    }
+    
     const taskToSave = {
       ...task,
       ...data,
+      deadline: finalDeadline,
       subtasks: newSubtasks,
     };
     onSave(taskToSave);
@@ -187,6 +205,22 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
               </FormItem>
             )}
           />
+
+          {deadlineValue && (
+            <FormField
+              control={form.control}
+              name="deadlineTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
             <CollapsibleTrigger asChild>

@@ -242,7 +242,7 @@ export function TaskPageClient() {
             }}
           >
             <DialogTrigger asChild>
-              <Button className="w-full">
+              <Button size="sm" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Task
               </Button>
@@ -258,7 +258,7 @@ export function TaskPageClient() {
           </Dialog>
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0">
+                  <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
                       <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>

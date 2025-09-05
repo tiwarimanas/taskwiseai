@@ -14,8 +14,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { Task } from '@/lib/types';
-import { format } from 'date-fns';
-import { Calendar, Edit, Trash2, HelpCircle, ChevronDown } from 'lucide-react';
+import { format, isToday, isTomorrow } from 'date-fns';
+import { Calendar, Edit, Trash2, HelpCircle, ChevronDown, Clock } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -53,6 +53,14 @@ export function TaskItem({
 
   const quadrantDetails = task.eisenhowerQuadrant ? quadrantConfig[task.eisenhowerQuadrant] : null;
 
+  const formatDate = (date: Date) => {
+    if (isToday(date)) return 'Today';
+    if (isTomorrow(date)) return 'Tomorrow';
+    return format(date, 'MMM d, yy');
+  };
+
+  const hasTime = task.deadline && format(task.deadline, 'HH:mm') !== '00:00';
+
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <Card className={cn(
@@ -82,9 +90,17 @@ export function TaskItem({
                     <span className={cn(
                       !task.completed && 'font-medium'
                     )}>
-                      {format(task.deadline, 'MMM d, yy')}
+                      {formatDate(task.deadline)}
                     </span>
                   </div>
+                  {hasTime && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span className={cn(!task.completed && 'font-medium')}>
+                        {format(task.deadline, 'p')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
