@@ -75,7 +75,21 @@ const suggestTaskTimeFlow = ai.defineFlow(
     outputSchema: SuggestTaskTimeOutputSchema,
   },
   async (input) => {
-    const { output } = await suggestTimePrompt(input);
-    return output!;
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        const { output } = await suggestTimePrompt(input);
+        return output!;
+      } catch (error: any) {
+        attempt++;
+        if (attempt >= maxRetries || !error.message.includes('503')) {
+          throw error;
+        }
+        console.log(`Attempt ${attempt} failed with 503. Retrying in ${attempt} second(s)...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      }
+    }
+    throw new Error('Time suggestion failed after multiple retries.');
   }
 );
