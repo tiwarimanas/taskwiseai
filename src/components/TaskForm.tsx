@@ -129,7 +129,10 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
 
   useEffect(() => {
     if (deadlineValue && titleValue && titleValue.length >= 3) {
-      handleSuggestTime(deadlineValue, titleValue);
+      const handler = setTimeout(() => {
+        handleSuggestTime(deadlineValue, titleValue);
+      }, 500); // Debounce to avoid excessive calls
+      return () => clearTimeout(handler);
     } else {
       setTimeSuggestions([]);
     }
@@ -181,9 +184,14 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
 
     let finalDeadline: Date | null = data.deadline;
     if (data.deadline && data.deadlineTime) {
-      const datePart = format(data.deadline, 'yyyy-MM-dd');
-      const timePart = data.deadlineTime;
-      finalDeadline = parse(`${datePart}T${timePart}`, "yyyy-MM-dd'T'HH:mm", new Date());
+      try {
+        const datePart = format(data.deadline, 'yyyy-MM-dd');
+        const timePart = data.deadlineTime;
+        finalDeadline = parse(`${datePart}T${timePart}`, "yyyy-MM-dd'T'HH:mm", new Date());
+      } catch (e) {
+        console.error("Error parsing date/time", e);
+        finalDeadline = data.deadline;
+      }
     }
     
     const taskToSave = {
