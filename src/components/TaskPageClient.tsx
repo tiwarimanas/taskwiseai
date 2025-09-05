@@ -250,6 +250,7 @@ export function TaskPageClient() {
             {isFormOpen && (
               <TaskForm
                 task={editingTask}
+                allTasks={tasks}
                 onSave={handleSaveTask}
                 onClose={() => setIsFormOpen(false)}
                 isSaving={isSaving}

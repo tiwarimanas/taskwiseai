@@ -27,15 +27,17 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Task, Subtask } from '@/lib/types';
 import { CalendarIcon, PlusCircle, Sparkles, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays, parse } from 'date-fns';
+import { format, addDays, parse, startOfDay } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { generateTaskDetails } from '@/ai/flows/generate-task-details';
+import { suggestTaskTime } from '@/ai/flows/suggest-task-time';
 import { useToast } from '@/hooks/use-toast';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Badge } from './ui/badge';
 
 const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
@@ -49,15 +51,18 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
   task?: Task | null;
+  allTasks: Task[];
   onSave: (task: Omit<Task, 'id' | 'completed' | 'eisenhowerQuadrant'> & { id?: string }) => void;
   onClose: () => void;
   isSaving: boolean;
 }
 
-export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
+export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskFormProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isSuggestingTime, setIsSuggestingTime] = useState(false);
+  const [timeSuggestions, setTimeSuggestions] = useState<string[]>([]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -80,6 +85,9 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
   useEffect(() => {
     if (!deadlineValue) {
       form.setValue('deadlineTime', '');
+      setTimeSuggestions([]);
+    } else {
+      setTimeSuggestions([]);
     }
   }, [deadlineValue, form]);
 
@@ -108,6 +116,44 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
       setIsGenerating(false);
     }
   };
+  
+  const handleSuggestTime = async () => {
+    const deadline = form.getValues('deadline');
+    const title = form.getValues('title');
+    if (!deadline || !title) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Details',
+        description: 'Please select a date and enter a title first.',
+      });
+      return;
+    }
+    
+    setIsSuggestingTime(true);
+    setTimeSuggestions([]);
+    try {
+      const startOfSelectedDay = startOfDay(deadline);
+      const tasksForDay = allTasks.filter(t => t.deadline && startOfDay(t.deadline).getTime() === startOfSelectedDay.getTime());
+
+      const result = await suggestTaskTime({
+        forDate: deadline.toISOString(),
+        taskTitle: title,
+        existingTasks: tasksForDay.map(t => ({ title: t.title, deadline: t.deadline!.toISOString() }))
+      });
+      setTimeSuggestions(result.suggestions);
+
+    } catch (error) {
+      console.error('AI time suggestion failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'AI Suggestion Failed',
+        description: 'Could not suggest times. Please try again.',
+      });
+    } finally {
+      setIsSuggestingTime(false);
+    }
+  };
+
 
   const onSubmit = (data: TaskFormValues) => {
     const newSubtasks: Subtask[] = data.subtasks.map((st, index) => {
@@ -163,7 +209,7 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
                     disabled={isGenerating}
                     aria-label="Generate task details with AI"
                   >
-                    <Sparkles className={cn('h-4 w-4', isGenerating && 'animate-spin')} />
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   </Button>
                 </div>
                 <FormMessage />
@@ -213,10 +259,36 @@ export function TaskForm({ task, onSave, onClose, isSaving }: TaskFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Time</FormLabel>
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
+                  <div className='flex items-center gap-2'>
+                    <FormControl>
+                      <Input type="time" {...field} className="w-48"/>
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleSuggestTime}
+                      disabled={isSuggestingTime}
+                      aria-label="Suggest time with AI"
+                    >
+                      {isSuggestingTime ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    </Button>
+                  </div>
                   <FormMessage />
+                  {timeSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {timeSuggestions.map(time => (
+                            <Badge
+                                key={time}
+                                variant="outline"
+                                className="cursor-pointer"
+                                onClick={() => form.setValue('deadlineTime', time, {shouldValidate: true})}
+                            >
+                                {format(parse(time, 'HH:mm', new Date()), 'p')}
+                            </Badge>
+                        ))}
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
