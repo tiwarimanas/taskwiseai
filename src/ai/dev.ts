@@ -6,3 +6,4 @@ import '@/ai/flows/generate-task-details.ts';
 import '@/ai/flows/eisenhower-matrix-categorization.ts';
 import '@/ai/flows/suggest-task-time.ts';
 import '@/ai/flows/analyze-tasks.ts';
+import '@/ai/flows/generate-motivational-quote.ts';

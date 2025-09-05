@@ -30,7 +30,7 @@ import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
-import { AiAnalysisWidget } from './AiAnalysisWidget';
+import { AiQuoteWidget } from './AiQuoteWidget';
 import { useTasks } from '@/context/TaskContext';
 
 type SortOrder = 'eisenhower' | 'deadline';
@@ -279,7 +279,7 @@ export function TaskPageClient() {
       
       <CountdownWidget />
 
-      <AiAnalysisWidget />
+      <AiQuoteWidget />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
         <div className="flex items-center gap-2">
