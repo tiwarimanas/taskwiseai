@@ -227,11 +227,8 @@ export function TaskPageClient() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-2">
-          <div>
-            <h1 className="text-3xl font-bold font-headline">My Tasks</h1>
-            <p className="text-muted-foreground">Manage your tasks efficiently with AI.</p>
-          </div>
+        <div className="flex-grow">
+            <AiQuoteWidget />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Dialog
@@ -278,8 +275,6 @@ export function TaskPageClient() {
       </header>
       
       <CountdownWidget />
-
-      <AiQuoteWidget />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
         <div className="flex items-center gap-2">

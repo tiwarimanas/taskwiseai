@@ -48,22 +48,18 @@ export function AiQuoteWidget() {
   }
 
   return (
-    <div className="mb-6">
-      <Card className="bg-transparent shadow-none border-0">
-        <CardContent className="p-0">
-          {isGenerating ? (
-            <div className="space-y-2">
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-3/4" />
-            </div>
-          ) : (
-            <blockquote className="text-center">
-              <p className="text-lg font-quote italic text-muted-foreground">"{quote}"</p>
-              <footer className="mt-2 text-sm text-muted-foreground font-quote">- {author}</footer>
-            </blockquote>
-          )}
-        </CardContent>
-      </Card>
+    <div>
+        {isGenerating ? (
+        <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-3/4" />
+        </div>
+        ) : (
+        <blockquote className="text-left">
+            <p className="text-xl font-quote italic">"{quote}"</p>
+            <footer className="mt-2 text-sm text-muted-foreground font-quote">- {author}</footer>
+        </blockquote>
+        )}
     </div>
   );
 }
