@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -172,7 +173,7 @@ export function FocusPageClient() {
               <Slider
                 id="duration"
                 min={5}
-                max={60}
+                max={120}
                 step={5}
                 value={[focusDuration / 60]}
                 onValueChange={([value]) => setFocusDuration(value * 60)}
