@@ -27,6 +27,7 @@ const fromFirestore = (doc: any): Countdown => {
     id: doc.id,
     ...data,
     date: data.date.toDate(),
+    color: data.color || undefined,
   };
 };
 

@@ -20,6 +20,7 @@ export type Countdown = {
   id: string;
   title: string;
   date: Date;
+  color?: string;
 };
 
 export type UserProfile = {

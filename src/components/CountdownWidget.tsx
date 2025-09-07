@@ -18,6 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 
+const COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
+
+
 function getNextNewYear(): Countdown {
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -25,16 +28,18 @@ function getNextNewYear(): Countdown {
     id: 'new-year',
     title: 'New Year',
     date: new Date(currentYear + 1, 0, 1),
+    color: COLORS[7],
   };
 }
 
-const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Date) => void; onClose: () => void }) => {
+const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Date, color: string) => void; onClose: () => void }) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState<Date | undefined>();
+  const [color, setColor] = useState(COLORS[0]);
 
   const handleSubmit = () => {
     if (title && date) {
-      onAdd(title, date);
+      onAdd(title, date, color);
     }
   };
 
@@ -58,7 +63,7 @@ const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Dat
             <PopoverTrigger asChild>
               <Button
                 variant={'outline'}
-                className={cn('w-[280px] justify-start text-left font-normal col-span-3', !date && 'text-muted-foreground')}
+                className={cn('w-full justify-start text-left font-normal col-span-3', !date && 'text-muted-foreground')}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? format(date, 'PPP') : <span>Pick a date</span>}
@@ -68,6 +73,20 @@ const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Dat
               <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
             </PopoverContent>
           </Popover>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Color</Label>
+          <div className="col-span-3 flex gap-2">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={cn('h-6 w-6 rounded-full border-2 transition-all', color === c ? 'border-primary' : 'border-transparent')}
+                style={{ backgroundColor: c }}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
         </div>
       </div>
       <DialogFooter>
@@ -92,10 +111,13 @@ const CountdownCard = ({ countdown, isCustom, onDelete }: { countdown: Countdown
   }, [countdown.date]);
 
   return (
-    <Card className="w-48 flex-shrink-0 rounded-xl relative">
-      <CardContent className="p-4">
-        <p className="text-3xl font-bold">{daysRemaining}</p>
-        <p className="text-sm text-muted-foreground truncate" title={countdown.title}>
+    <Card 
+      className="w-40 flex-shrink-0 rounded-lg relative"
+      style={{ backgroundColor: countdown.color ? `${countdown.color}20` : undefined, borderColor: countdown.color ? `${countdown.color}80` : undefined }}
+    >
+      <CardContent className="p-3">
+        <p className="text-2xl font-bold">{daysRemaining}</p>
+        <p className="text-xs text-muted-foreground truncate" title={countdown.title}>
           days until {countdown.title}
         </p>
       </CardContent>
@@ -103,10 +125,10 @@ const CountdownCard = ({ countdown, isCustom, onDelete }: { countdown: Countdown
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-1 right-1 h-6 w-6"
+          className="absolute top-0.5 right-0.5 h-6 w-6"
           onClick={() => onDelete(countdown.id)}
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </Button>
       )}
     </Card>
@@ -121,7 +143,8 @@ export function CountdownWidget() {
   const [isLoading, setIsLoading] = useState(true);
 
   const allCountdowns = useMemo(() => {
-    return [getNextNewYear(), ...customCountdowns];
+    const combined = [getNextNewYear(), ...customCountdowns];
+    return combined.sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [customCountdowns]);
 
   useEffect(() => {
@@ -145,10 +168,10 @@ export function CountdownWidget() {
     fetchCountdowns();
   }, [user, toast]);
 
-  const handleAddCountdown = async (title: string, date: Date) => {
+  const handleAddCountdown = async (title: string, date: Date, color: string) => {
     if (!user) return;
     try {
-      const newCountdown = await countdownService.addCountdown(user.uid, { title, date });
+      const newCountdown = await countdownService.addCountdown(user.uid, { title, date, color });
       setCustomCountdowns((prev) => [...prev, newCountdown]);
       toast({
         title: 'Countdown Added!',
@@ -188,7 +211,7 @@ export function CountdownWidget() {
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-4 pb-4">
             {isLoading
-              ? [...Array(3)].map((_, i) => <Skeleton key={i} className="h-[92px] w-48 rounded-xl" />)
+              ? [...Array(3)].map((_, i) => <Skeleton key={i} className="h-[76px] w-40 rounded-lg" />)
               : allCountdowns.map((cd) => (
                   <CountdownCard
                     key={cd.id}
@@ -199,11 +222,11 @@ export function CountdownWidget() {
                 ))}
             <Button
               variant="outline"
-              className="w-48 h-[92px] flex-shrink-0 rounded-xl flex-col gap-1"
+              className="w-40 h-[76px] flex-shrink-0 rounded-lg flex-col gap-1"
               onClick={() => setIsFormOpen(true)}
             >
               <PlusCircle className="h-6 w-6" />
-              <span>Add Countdown</span>
+              <span className='text-xs'>Add Countdown</span>
             </Button>
           </div>
           <ScrollBar orientation="horizontal" />
