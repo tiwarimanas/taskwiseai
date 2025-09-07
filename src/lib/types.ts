@@ -33,4 +33,6 @@ export type FocusSession = {
   endTime: Date;
   pausedTime?: Date;
   remainingOnPause?: number;
+  sessionType: 'focus' | 'break';
+  duration: number; // in seconds
 };

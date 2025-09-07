@@ -2,12 +2,10 @@ import { db } from '@/lib/firebase';
 import type { FocusSession } from '@/lib/types';
 import { doc, onSnapshot, setDoc, Timestamp, deleteDoc } from 'firebase/firestore';
 
-type FirestoreFocusSession = {
-  isActive: boolean;
+type FirestoreFocusSession = Omit<FocusSession, 'startTime' | 'endTime' | 'pausedTime'> & {
   startTime: Timestamp;
   endTime: Timestamp;
   pausedTime?: Timestamp;
-  remainingOnPause?: number;
 };
 
 const getFocusDoc = (userId: string) => {
@@ -15,16 +13,17 @@ const getFocusDoc = (userId: string) => {
 };
 
 const fromFirestore = (data: Partial<FirestoreFocusSession>): FocusSession | null => {
-  // Validate that essential fields exist before processing
-  if (!data.isActive || !data.startTime || !data.endTime) {
+  if (!data.startTime || !data.endTime) {
     return null;
   }
   return {
-    isActive: data.isActive,
+    isActive: data.isActive ?? false,
     startTime: data.startTime.toDate(),
     endTime: data.endTime.toDate(),
     pausedTime: data.pausedTime?.toDate(),
     remainingOnPause: data.remainingOnPause,
+    sessionType: data.sessionType || 'focus',
+    duration: data.duration || 25 * 60,
   };
 };
 
@@ -42,16 +41,17 @@ export const streamFocusSession = (
   });
 };
 
-export const startFocusSession = async (userId: string, durationSeconds: number): Promise<void> => {
+export const startFocusSession = async (userId: string, durationSeconds: number, sessionType: 'focus' | 'break'): Promise<void> => {
   const focusDoc = getFocusDoc(userId);
   const now = new Date();
   const endTime = new Date(now.getTime() + durationSeconds * 1000);
   
-  // Use a type that matches what we write to Firestore
   const newSession: Omit<FirestoreFocusSession, 'pausedTime' | 'remainingOnPause'> = {
     isActive: true,
     startTime: Timestamp.fromDate(now),
     endTime: Timestamp.fromDate(endTime),
+    sessionType,
+    duration: durationSeconds,
   };
   await setDoc(focusDoc, newSession);
 };
@@ -68,6 +68,5 @@ export const pauseFocusSession = async (userId: string, remainingSeconds: number
 
 export const resetFocusSession = async (userId: string): Promise<void> => {
   const focusDoc = getFocusDoc(userId);
-  // Deleting the document is cleaner than leaving partial data.
   await deleteDoc(focusDoc);
 };
