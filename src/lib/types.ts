@@ -26,3 +26,11 @@ export type Countdown = {
 export type UserProfile = {
   knowledge?: string;
 };
+
+export type FocusSession = {
+  isActive: boolean;
+  startTime: Date;
+  endTime: Date;
+  pausedTime?: Date;
+  remainingOnPause?: number;
+};
