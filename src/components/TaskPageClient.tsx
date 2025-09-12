@@ -3,8 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Plus, SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX, MoreVertical } from 'lucide-react';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +31,8 @@ import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { AiQuoteWidget } from './AiQuoteWidget';
 import { useTasks } from '@/context/TaskContext';
+import { QuickAddTask } from './QuickAddTask';
+import { Dialog } from './ui/dialog';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
@@ -226,57 +227,17 @@ export function TaskPageClient() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="flex-grow">
-            <AiQuoteWidget />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Dialog
-            open={isFormOpen}
-            onOpenChange={(isOpen) => {
-              if (isSaving) return;
-              setIsFormOpen(isOpen);
-              if (!isOpen) setEditingTask(null);
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm" className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Task
-              </Button>
-            </DialogTrigger>
-            {isFormOpen && (
-              <TaskForm
-                task={editingTask}
-                allTasks={tasks}
-                onSave={handleSaveTask}
-                onClose={() => setIsFormOpen(false)}
-                isSaving={isSaving}
-              />
-            )}
-          </Dialog>
-          <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
-                      <MoreVertical className="h-4 w-4" />
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
-                      Delete completed tasks
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
-                      Delete all tasks
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <header className="mb-8">
+        <AiQuoteWidget />
       </header>
       
       <CountdownWidget />
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
+      <div className="mb-6">
+        <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
           <Button
@@ -325,6 +286,25 @@ export function TaskPageClient() {
                 <span>Hide Completed</span>
             </Button>
         </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                      <MoreVertical className="h-4 w-4" />
+                      Actions
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
+                      Delete completed tasks
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
+                      Delete all tasks
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
 
@@ -345,6 +325,25 @@ export function TaskPageClient() {
           />
         )}
       </main>
+
+      <Dialog
+        open={isFormOpen}
+        onOpenChange={(isOpen) => {
+          if (isSaving) return;
+          setIsFormOpen(isOpen);
+          if (!isOpen) setEditingTask(null);
+        }}
+      >
+        {isFormOpen && (
+          <TaskForm
+            task={editingTask}
+            allTasks={tasks}
+            onSave={handleSaveTask}
+            onClose={() => setIsFormOpen(false)}
+            isSaving={isSaving}
+          />
+        )}
+      </Dialog>
 
       <AlertDialog open={!!deleteAction} onOpenChange={() => setDeleteAction(null)}>
         <AlertDialogContent>
