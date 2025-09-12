@@ -234,68 +234,60 @@ export function TaskPageClient() {
         <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6">
-        <div className="flex items-center gap-2">
-          <Button
-              variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => handleSortChange('eisenhower')}
-          >
-              <ArrowDownUp className="h-4 w-4" />
-              <span>Matrix</span>
-              {sortOrder === 'eisenhower' && (
-                  sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
-              )}
-          </Button>
-          <Button
-              variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => handleSortChange('deadline')}
-          >
-              <CalendarDays className="h-4 w-4" />
-              <span>Deadline</span>
-              {sortOrder === 'deadline' && (
-                  sortDirection === 'asc' ? <SortAsc className="h-4 w-4 text-muted-foreground" /> : <SortDesc className="h-4 w-4 text-muted-foreground" />
-              )}
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-            <Button
-                variant={filter === 'all' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilter('all')}
-            >
-                <List className="h-4 w-4" />
-                <span>All</span>
-            </Button>
-            <Button
-                variant={filter === 'active' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilter('active')}
-            >
-                <ListX className="h-4 w-4" />
-                <span>Active</span>
-            </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">More Actions</span>
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
-                      Delete completed tasks
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
-                      Delete all tasks
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+            variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => handleSortChange('eisenhower')}
+            className="h-9 w-9"
+            aria-label="Sort by Matrix"
+        >
+            <ArrowDownUp className="h-4 w-4" />
+        </Button>
+        <Button
+            variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => handleSortChange('deadline')}
+            className="h-9 w-9"
+            aria-label="Sort by Deadline"
+        >
+            <CalendarDays className="h-4 w-4" />
+        </Button>
+        <Button
+            variant={filter === 'all' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => setFilter('all')}
+            className="h-9 w-9"
+            aria-label="Show all tasks"
+        >
+            <List className="h-4 w-4" />
+        </Button>
+        <Button
+            variant={filter === 'active' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => setFilter('active')}
+            className="h-9 w-9"
+            aria-label="Show active tasks"
+        >
+            <ListX className="h-4 w-4" />
+        </Button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">More Actions</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
+                    Delete completed tasks
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
+                    Delete all tasks
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
 
