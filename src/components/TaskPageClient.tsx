@@ -3,13 +3,16 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { SortAsc, SortDesc, ArrowDownUp, CalendarDays, List, ListX, MoreVertical } from 'lucide-react';
+import { ArrowDownUp, CalendarDays, MoreVertical, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -234,43 +237,7 @@ export function TaskPageClient() {
         <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
       </div>
 
-      <div className="flex items-center gap-2 mb-6">
-        <Button
-            variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => handleSortChange('eisenhower')}
-            className="h-9 w-9"
-            aria-label="Sort by Matrix"
-        >
-            <ArrowDownUp className="h-4 w-4" />
-        </Button>
-        <Button
-            variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => handleSortChange('deadline')}
-            className="h-9 w-9"
-            aria-label="Sort by Deadline"
-        >
-            <CalendarDays className="h-4 w-4" />
-        </Button>
-        <Button
-            variant={filter === 'all' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setFilter('all')}
-            className="h-9 w-9"
-            aria-label="Show all tasks"
-        >
-            <List className="h-4 w-4" />
-        </Button>
-        <Button
-            variant={filter === 'active' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setFilter('active')}
-            className="h-9 w-9"
-            aria-label="Show active tasks"
-        >
-            <ListX className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center justify-end gap-2 mb-6">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
@@ -279,10 +246,31 @@ export function TaskPageClient() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+                  <DropdownMenuRadioItem value="eisenhower">
+                    <ArrowDownUp className="mr-2 h-4 w-4" />
+                    <span>Matrix</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="deadline">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    <span>Deadline</span>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel>Filter</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={filter} onValueChange={(value) => setFilter(value as FilterType)}>
+                  <DropdownMenuRadioItem value="all">Show All</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="active">Show Active</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+                
+                <DropdownMenuSeparator />
+
                 <DropdownMenuItem onClick={() => setDeleteAction('completed')}>
                     Delete completed tasks
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setDeleteAction('all')} className="text-destructive focus:text-destructive">
                     Delete all tasks
                 </DropdownMenuItem>
