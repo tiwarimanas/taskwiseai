@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListTodo, LogOut, Bot, LayoutGrid, Settings, Timer } from 'lucide-react';
+import { ListTodo, LogOut, Bot, LayoutGrid, Settings, Timer, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -26,6 +26,7 @@ import {
 const menuItems = [
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
   { href: '/matrix', label: 'Matrix', icon: LayoutGrid },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/focus', label: 'Focus', icon: Timer },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
