@@ -15,15 +15,14 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetClose
+} from '@/components/ui/sheet';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
 import { categorizeTaskEisenhower } from '@/ai/flows/eisenhower-matrix-categorization';
@@ -34,7 +33,6 @@ import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
-import { Dialog } from './ui/dialog';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
@@ -296,7 +294,7 @@ export function TaskPageClient() {
         )}
       </main>
 
-      <Dialog
+      <Sheet
         open={isFormOpen}
         onOpenChange={(isOpen) => {
           if (isSaving) return;
@@ -313,26 +311,28 @@ export function TaskPageClient() {
             isSaving={isSaving}
           />
         )}
-      </Dialog>
+      </Sheet>
 
-      <AlertDialog open={!!deleteAction} onOpenChange={() => setDeleteAction(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Sheet open={!!deleteAction} onOpenChange={() => setDeleteAction(null)}>
+        <SheetContent side="bottom" className="sm:max-w-md mx-auto">
+          <SheetHeader>
+            <SheetTitle>Are you absolutely sure?</SheetTitle>
+            <SheetDescription>
               {deleteAction === 'completed'
                 ? 'This action will permanently delete all completed tasks.'
                 : 'This action will permanently delete all your tasks. This cannot be undone.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
+            </SheetDescription>
+          </SheetHeader>
+          <SheetFooter className="mt-4 flex-row justify-end gap-2">
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
+            <Button onClick={confirmDelete}>
               Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

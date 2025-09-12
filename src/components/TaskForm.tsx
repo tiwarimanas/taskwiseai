@@ -13,13 +13,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-  DialogClose,
-} from '@/components/ui/dialog';
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetDescription,
+  SheetClose,
+} from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -204,13 +204,13 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] grid-rows-[auto,1fr,auto] max-h-[90svh] flex flex-col">
-      <DialogHeader>
-        <DialogTitle>{task ? 'Edit Task' : 'Create Task'}</DialogTitle>
-        <DialogDescription>
+    <SheetContent side="bottom" className="sm:max-w-[600px] grid-rows-[auto,1fr,auto] max-h-[90svh] flex flex-col mx-auto">
+      <SheetHeader>
+        <SheetTitle>{task ? 'Edit Task' : 'Create Task'}</SheetTitle>
+        <SheetDescription>
           {task ? 'Update the details of your task.' : ''}
-        </DialogDescription>
-      </DialogHeader>
+        </SheetDescription>
+      </SheetHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 overflow-y-auto pr-4 flex-grow">
           <FormField
@@ -357,17 +357,17 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
           </Collapsible>
         </form>
       </Form>
-      <DialogFooter>
-        <DialogClose asChild>
+      <SheetFooter>
+        <SheetClose asChild>
           <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-        </DialogClose>
+        </SheetClose>
         <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isSaving ? (task ? 'Saving...' : 'Creating...') : (task ? 'Save Changes' : 'Create Task')}
         </Button>
-      </DialogFooter>
-    </DialogContent>
+      </SheetFooter>
+    </SheetContent>
   );
 }

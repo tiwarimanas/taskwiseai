@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -44,10 +44,10 @@ const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Dat
   };
 
   return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Add Custom Countdown</DialogTitle>
-      </DialogHeader>
+    <SheetContent side="bottom">
+      <SheetHeader>
+        <SheetTitle>Add Custom Countdown</SheetTitle>
+      </SheetHeader>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="title" className="text-right">
@@ -89,15 +89,15 @@ const AddCountdownForm = ({ onAdd, onClose }: { onAdd: (title: string, date: Dat
           </div>
         </div>
       </div>
-      <DialogFooter>
-        <DialogClose asChild>
+      <SheetFooter>
+        <SheetClose asChild>
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-        </DialogClose>
+        </SheetClose>
         <Button onClick={handleSubmit}>Add Countdown</Button>
-      </DialogFooter>
-    </DialogContent>
+      </SheetFooter>
+    </SheetContent>
   );
 };
 
@@ -207,7 +207,7 @@ export function CountdownWidget() {
 
   return (
     <div className="mb-6">
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-4 pb-4">
             {isLoading
@@ -232,7 +232,7 @@ export function CountdownWidget() {
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         {isFormOpen && <AddCountdownForm onAdd={handleAddCountdown} onClose={() => setIsFormOpen(false)} />}
-      </Dialog>
+      </Sheet>
     </div>
   );
 }
