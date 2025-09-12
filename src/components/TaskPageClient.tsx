@@ -29,7 +29,6 @@ import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
 import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
-import { AiQuoteWidget } from './AiQuoteWidget';
 import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
 import { Dialog } from './ui/dialog';
@@ -228,10 +227,8 @@ export function TaskPageClient() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="mb-8">
-        <AiQuoteWidget />
+        <CountdownWidget />
       </header>
-      
-      <CountdownWidget />
 
       <div className="mb-6">
         <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
@@ -239,12 +236,10 @@ export function TaskPageClient() {
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
           <Button
               variant={sortOrder === 'eisenhower' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => handleSortChange('eisenhower')}
-              className="gap-2"
           >
               <ArrowDownUp className="h-4 w-4" />
               <span>Matrix</span>
@@ -256,7 +251,6 @@ export function TaskPageClient() {
               variant={sortOrder === 'deadline' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => handleSortChange('deadline')}
-              className="gap-2"
           >
               <CalendarDays className="h-4 w-4" />
               <span>Deadline</span>
@@ -266,32 +260,29 @@ export function TaskPageClient() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Filter:</span>
             <Button
                 variant={filter === 'all' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilter('all')}
-                className="gap-2"
             >
                 <List className="h-4 w-4" />
-                <span>Show All</span>
+                <span>All</span>
             </Button>
             <Button
                 variant={filter === 'active' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilter('active')}
-                className="gap-2"
             >
                 <ListX className="h-4 w-4" />
-                <span>Hide Completed</span>
+                <span>Active</span>
             </Button>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
                       <MoreVertical className="h-4 w-4" />
-                      Actions
+                      <span className="sr-only">More Actions</span>
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
