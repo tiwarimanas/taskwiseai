@@ -233,15 +233,14 @@ export function TaskPageClient() {
         <CountdownWidget />
       </header>
 
-      <div className="mb-6">
-        <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
-      </div>
-
-      <div className="flex items-center justify-end gap-2 mb-6">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex-grow">
+          <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
+        </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <MoreVertical className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-12 w-12 flex-shrink-0 rounded-full">
+                    <MoreVertical className="h-5 w-5" />
                     <span className="sr-only">More Actions</span>
                 </Button>
             </DropdownMenuTrigger>
