@@ -29,7 +29,7 @@ export type GenerateMotivationalQuoteInput = z.infer<typeof GenerateMotivational
 
 export async function generateMotivationalQuote(input: GenerateMotivationalQuoteInput): Promise<GenerateMotivationalQuoteOutput> {
   try {
-    const response = await fetch('https://api.quotable.io/random');
+    const response = await fetch('https://api.quotable.io/random', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Quotable API failed with status: ${response.status}`);
     }
