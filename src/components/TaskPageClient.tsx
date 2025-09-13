@@ -36,6 +36,7 @@ import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
 import { AiQuoteWidget } from './AiQuoteWidget';
 import { addDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
@@ -277,12 +278,15 @@ export function TaskPageClient() {
               setIsFormOpen(true);
             }}
           />
-          {quickAddTitle.length > 2 && (
-            <div className="mt-2 flex items-center gap-2">
-                <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(new Date())} className="rounded-full">Today</Button>
-                <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(addDays(new Date(), 1))} className="rounded-full">Tomorrow</Button>
-            </div>
-          )}
+          <div className={cn(
+            "mt-2 flex items-center gap-2 transition-all duration-300 ease-out",
+            quickAddTitle.length > 2
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-2 pointer-events-none"
+          )}>
+              <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(new Date())} className="rounded-full">Today</Button>
+              <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(addDays(new Date(), 1))} className="rounded-full">Tomorrow</Button>
+          </div>
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
