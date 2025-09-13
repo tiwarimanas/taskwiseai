@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowDownUp, CalendarDays, MoreVertical, Check } from 'lucide-react';
+import { ArrowDownUp, CalendarDays, MoreVertical, Check, List, LayoutGrid, Calendar as CalendarIconLucide } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,18 +35,110 @@ import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
 import { AiQuoteWidget } from './AiQuoteWidget';
-import { addDays } from 'date-fns';
+import { addDays, format, isSameDay, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Checkbox } from './ui/checkbox';
+import Link from 'next/link';
+import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from '@hello-pangea/dnd';
+import { Calendar } from '@/components/ui/calendar';
 
+
+type ViewMode = 'list' | 'matrix' | 'calendar';
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
 type DeleteAction = 'completed' | 'all' | null;
+type Quadrant = 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
+
 
 const quadrantOrder: Record<Task['eisenhowerQuadrant'] & string, number> = {
   UrgentImportant: 1,
   NotUrgentImportant: 2,
   UrgentNotImportant: 3,
   NotUrgentNotImportant: 4,
+};
+
+const quadrantConfig: Record<Quadrant, { title: string; description: string; className: string }> = {
+    UrgentImportant: { title: 'Urgent & Important', description: 'Do First', className: 'bg-green-500/10 border-green-500/40' },
+    NotUrgentImportant: { title: 'Not Urgent & Important', description: 'Schedule', className: 'bg-blue-500/10 border-blue-500/40' },
+    UrgentNotImportant: { title: 'Urgent & Not Important', description: 'Delegate', className: 'bg-yellow-500/10 border-yellow-500/40' },
+    NotUrgentNotImportant: { title: 'Not Urgent & Not Important', description: 'Delete', className: 'bg-red-500/10 border-red-500/40' },
+};
+  
+function TaskMatrixItem({ task, isDragging, onToggleComplete }: { task: Task; isDragging: boolean, onToggleComplete: (taskId: string, completed: boolean) => void }) {
+    const stopPropagation = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    };
+    
+    return (
+        <div
+        className={cn(
+            'p-3 mb-2 border rounded-lg bg-card hover:bg-accent cursor-pointer transition-colors flex items-start gap-3',
+            isDragging && 'shadow-lg'
+        )}
+        >
+        <Checkbox
+                className="mt-1"
+                checked={task.completed}
+                onCheckedChange={(checked) => onToggleComplete(task.id, !!checked)}
+                aria-labelledby={`task-title-${task.id}`}
+                onClick={stopPropagation}
+            />
+        <div className="block flex-grow">
+            <p id={`task-title-${task.id}`} className={cn(`font-medium`, task.completed ? 'line-through text-muted-foreground' : '')}>{task.title}</p>
+        </div>
+        </div>
+    );
+}
+
+function CalendarTaskItem({ task, onToggleComplete }: { task: Task, onToggleComplete: (taskId: string, completed: boolean) => void }) {
+    const stopPropagation = (e: React.MouseEvent) => {
+      e.stopPropagation();
+    };
+    
+    return (
+      <div className="p-3 mb-2 border rounded-lg bg-card hover:bg-accent cursor-pointer transition-colors flex items-start gap-3">
+          <Checkbox
+              className="mt-1"
+              checked={task.completed}
+              onCheckedChange={(checked) => onToggleComplete(task.id, !!checked)}
+              aria-labelledby={`task-title-${task.id}`}
+              onClick={stopPropagation}
+          />
+          <div className="flex-grow">
+              <p id={`task-title-${task.id}`} className={cn(`font-medium`, task.completed ? 'line-through text-muted-foreground' : '')}>{task.title}</p>
+              {task.deadline && format(task.deadline, 'HH:mm') !== '00:00' && (
+                  <p className="text-xs text-muted-foreground">{format(task.deadline, 'p')}</p>
+              )}
+          </div>
+      </div>
+    );
+}
+  
+
+const ViewSwitcher = ({ view, setView }: { view: ViewMode; setView: (view: ViewMode) => void }) => {
+    const views: { id: ViewMode; icon: React.ElementType; label: string }[] = [
+      { id: 'list', icon: List, label: 'List' },
+      { id: 'matrix', icon: LayoutGrid, label: 'Matrix' },
+      { id: 'calendar', icon: CalendarIconLucide, label: 'Calendar' },
+    ];
+  
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
+        {views.map((v) => (
+          <Button
+            key={v.id}
+            variant={view === v.id ? 'background' : 'ghost'}
+            size="sm"
+            className={cn('flex-1 justify-center', view === v.id && 'shadow-sm bg-background')}
+            onClick={() => setView(v.id)}
+          >
+            <v.icon className="mr-2 h-4 w-4" />
+            {v.label}
+          </Button>
+        ))}
+      </div>
+    );
 };
 
 export function TaskPageClient() {
@@ -65,6 +157,10 @@ export function TaskPageClient() {
   const [deleteAction, setDeleteAction] = useState<DeleteAction>(null);
 
   const [quickAddTitle, setQuickAddTitle] = useState('');
+  const [view, setView] = useState<ViewMode>('list');
+
+  // Calendar state
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }, fromQuickAdd = false) => {
     if (!user) return;
@@ -213,6 +309,67 @@ export function TaskPageClient() {
     });
   }, [tasks, sortOrder, sortDirection, filter]);
 
+  // Matrix-specific logic
+  const categorizedTasks = useMemo(() => {
+    const newCategorizedTasks: Record<Quadrant, Task[]> = {
+      UrgentImportant: [],
+      NotUrgentImportant: [],
+      UrgentNotImportant: [],
+      NotUrgentNotImportant: [],
+    };
+    tasks.forEach((task) => {
+      const quadrant = task.eisenhowerQuadrant || 'NotUrgentNotImportant'; // Default if not set
+      if (newCategorizedTasks[quadrant as Quadrant]) {
+        newCategorizedTasks[quadrant as Quadrant].push(task);
+      }
+    });
+    return newCategorizedTasks;
+  }, [tasks]);
+
+  const onDragEnd: OnDragEndResponder = async (result) => {
+    const { source, destination, draggableId } = result;
+    if (!destination || !user) return;
+
+    const sourceQuadrant = source.droppableId as Quadrant;
+    const destQuadrant = destination.droppableId as Quadrant;
+    if (sourceQuadrant === destQuadrant && source.index === destination.index) return;
+    
+    const taskToMove = tasks.find(t => t.id === draggableId);
+    if (!taskToMove) return;
+
+    try {
+      await taskService.updateTask(user.uid, draggableId, { eisenhowerQuadrant: destQuadrant });
+      toast({
+        title: 'Task Moved',
+        description: `"${taskToMove.title}" moved to "${quadrantConfig[destQuadrant].title}".`,
+      });
+    } catch (error) {
+      console.error('Failed to update task quadrant:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not move the task. Please try again.',
+      });
+    }
+  };
+
+  // Calendar-specific logic
+  const tasksWithDeadlines = useMemo(() => {
+    return tasks.filter((task) => task.deadline);
+  }, [tasks]);
+  
+  const taskDates = useMemo(() => {
+    return tasksWithDeadlines.map(task => startOfDay(task.deadline!));
+  }, [tasksWithDeadlines]);
+
+  const tasksForSelectedDay = useMemo(() => {
+    if (!selectedDate) return [];
+    return tasksWithDeadlines
+      .filter((task) => isSameDay(task.deadline!, selectedDate))
+      .sort((a, b) => a.deadline!.getTime() - b.deadline!.getTime());
+  }, [selectedDate, tasksWithDeadlines]);
+
+
   const confirmDelete = async () => {
     if (!user || !deleteAction) return;
 
@@ -252,6 +409,123 @@ export function TaskPageClient() {
     }
   };
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      );
+    }
+  
+    switch (view) {
+      case 'list':
+        return (
+          <TaskList
+            tasks={filteredAndSortedTasks}
+            onToggleComplete={handleToggleComplete}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onSubtaskChange={handleSubtaskChange}
+          />
+        );
+      case 'matrix':
+        return (
+            <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(Object.keys(quadrantConfig) as Quadrant[]).map((quadrant) => (
+                <Droppable key={quadrant} droppableId={quadrant}>
+                  {(provided, snapshot) => (
+                    <Card
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        'min-h-[300px] flex flex-col transition-colors',
+                        quadrantConfig[quadrant].className,
+                        snapshot.isDraggingOver && 'bg-accent/80'
+                      )}
+                    >
+                      <CardHeader>
+                        <CardTitle>{quadrantConfig[quadrant].title}</CardTitle>
+                        <p className="text-muted-foreground">{quadrantConfig[quadrant].description}</p>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        {categorizedTasks[quadrant].length > 0 ? (
+                          categorizedTasks[quadrant].map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                >
+                                  <TaskMatrixItem task={task} isDragging={snapshot.isDragging} onToggleComplete={handleToggleComplete} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                            {snapshot.isDraggingOver ? 'Drop task here' : 'No tasks in this quadrant.'}
+                          </div>
+                        )}
+                        {provided.placeholder}
+                      </CardContent>
+                    </Card>
+                  )}
+                </Droppable>
+              ))}
+            </div>
+            </DragDropContext>
+        );
+      case 'calendar':
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardContent className="p-0">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            className="p-3"
+                            modifiers={{
+                                hasTasks: taskDates,
+                            }}
+                            modifiersStyles={{
+                                hasTasks: { 
+                                    fontWeight: 'bold',
+                                    textDecoration: 'underline',
+                                },
+                            }}
+                            disabled={isLoading}
+                        />
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="md:col-span-1">
+                <h2 className="text-xl font-semibold mb-4 font-headline">
+                    Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
+                </h2>
+                {isLoading ? (
+                    <p>Loading tasks...</p>
+                ) : tasksForSelectedDay.length > 0 ? (
+                    <div className="space-y-2">
+                    {tasksForSelectedDay.map((task) => (
+                        <CalendarTaskItem key={task.id} task={task} onToggleComplete={handleToggleComplete} />
+                    ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground">No tasks due on this day.</p>
+                )}
+                </div>
+            </div>
+        );
+    }
+  };
+
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -261,6 +535,10 @@ export function TaskPageClient() {
         </div>
         <CountdownWidget />
       </header>
+
+      <div className="mb-6">
+        <ViewSwitcher view={view} setView={setView} />
+      </div>
 
       <div className="flex items-start gap-4 mb-6">
         <div className="flex-grow">
@@ -330,21 +608,7 @@ export function TaskPageClient() {
 
 
       <main>
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        ) : (
-          <TaskList
-            tasks={filteredAndSortedTasks}
-            onToggleComplete={handleToggleComplete}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onSubtaskChange={handleSubtaskChange}
-          />
-        )}
+        {renderContent()}
       </main>
 
       <Sheet

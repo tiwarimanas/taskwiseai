@@ -25,8 +25,6 @@ import {
 
 const menuItems = [
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
-  { href: '/matrix', label: 'Matrix', icon: LayoutGrid },
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/focus', label: 'Focus', icon: Timer },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
