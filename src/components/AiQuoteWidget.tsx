@@ -50,13 +50,13 @@ export function AiQuoteWidget() {
   return (
     <div>
         {isGenerating ? (
-        <div className="space-y-2 max-w-lg mx-auto">
+        <div className="space-y-2 max-w-lg">
             <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-5 w-3/4 mx-auto" />
+            <Skeleton className="h-5 w-3/4" />
         </div>
         ) : (
-        <blockquote className="text-center">
-            <p className="text-xl font-quote italic">"{quote}"</p>
+        <blockquote className="text-left">
+            <p className="text-base font-quote italic">"{quote}"</p>
             <footer className="mt-2 text-sm text-muted-foreground font-quote">- {author}</footer>
         </blockquote>
         )}
