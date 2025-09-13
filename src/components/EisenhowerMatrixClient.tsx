@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useTasks } from '@/context/TaskContext';
 import { useAuth } from '@/context/AuthContext';
 import * as taskService from '@/services/taskService';
+import { Checkbox } from './ui/checkbox';
 
 type Quadrant = 'UrgentImportant' | 'NotUrgentImportant' | 'UrgentNotImportant' | 'NotUrgentNotImportant';
 
@@ -21,18 +22,29 @@ const quadrantConfig: Record<Quadrant, { title: string; description: string; cla
   NotUrgentNotImportant: { title: 'Not Urgent & Not Important', description: 'Delete', className: 'bg-red-500/10 border-red-500/40' },
 };
 
-function TaskMatrixItem({ task, isDragging }: { task: Task; isDragging: boolean }) {
+function TaskMatrixItem({ task, isDragging, onToggleComplete }: { task: Task; isDragging: boolean, onToggleComplete: (taskId: string, completed: boolean) => void }) {
+  const stopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
   return (
-    <Link href="/tasks" className="block">
-      <div
-        className={cn(
-          'p-3 mb-2 border rounded-lg bg-card hover:bg-accent cursor-pointer transition-colors',
-          isDragging && 'shadow-lg'
-        )}
-      >
-        <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
-      </div>
-    </Link>
+    <div
+      className={cn(
+        'p-3 mb-2 border rounded-lg bg-card hover:bg-accent cursor-pointer transition-colors flex items-start gap-3',
+        isDragging && 'shadow-lg'
+      )}
+    >
+      <Checkbox
+            className="mt-1"
+            checked={task.completed}
+            onCheckedChange={(checked) => onToggleComplete(task.id, !!checked)}
+            aria-labelledby={`task-title-${task.id}`}
+            onClick={stopPropagation}
+        />
+      <Link href="/tasks" className="block flex-grow">
+        <p id={`task-title-${task.id}`} className={cn(`font-medium`, task.completed ? 'line-through text-muted-foreground' : '')}>{task.title}</p>
+      </Link>
+    </div>
   );
 }
 
@@ -82,6 +94,20 @@ export function EisenhowerMatrixClient() {
         description: 'Could not move the task. Please try again.',
       });
       // Note: No need for manual UI revert, onSnapshot will handle it.
+    }
+  };
+
+  const handleToggleComplete = async (taskId: string, completed: boolean) => {
+    if (!user) return;
+    try {
+      await taskService.updateTask(user.uid, taskId, { completed });
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update task status.',
+      });
     }
   };
 
@@ -148,7 +174,7 @@ export function EisenhowerMatrixClient() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TaskMatrixItem task={task} isDragging={snapshot.isDragging} />
+                              <TaskMatrixItem task={task} isDragging={snapshot.isDragging} onToggleComplete={handleToggleComplete} />
                             </div>
                           )}
                         </Draggable>
