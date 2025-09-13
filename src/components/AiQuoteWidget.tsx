@@ -14,6 +14,7 @@ export function AiQuoteWidget() {
   const [author, setAuthor] = useState('');
   const [isGenerating, setIsGenerating] = useState(true);
 
+  // tasksForQuote is not needed anymore for fetching, but we keep the type for the function call
   const tasksForQuote = useMemo(() => {
     return tasks.map(t => ({
       title: t.title,
@@ -22,12 +23,11 @@ export function AiQuoteWidget() {
   }, [tasks]);
 
   useEffect(() => {
-    const getQuote = async (tasksToAnalyze: { title: string; completed: boolean }[]) => {
-      if (tasksLoading) return;
-      
+    const getQuote = async () => {
       setIsGenerating(true);
       try {
-        const result = await generateMotivationalQuote(tasksToAnalyze);
+        // We pass an empty array as the tasks are not used by the API endpoint
+        const result = await generateMotivationalQuote([]);
         setQuote(result.quote);
         setAuthor(result.author);
       } catch (error) {
@@ -40,8 +40,8 @@ export function AiQuoteWidget() {
       }
     };
 
-    getQuote(tasksForQuote);
-  }, [tasksForQuote, tasksLoading]);
+    getQuote();
+  }, []); // Empty dependency array ensures this runs once on mount
 
   if (tasksLoading) {
       return null;
