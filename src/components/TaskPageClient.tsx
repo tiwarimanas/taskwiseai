@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -229,12 +230,11 @@ export function TaskPageClient() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <header className="mb-8">
+        <div className="mb-6 text-left">
+            <AiQuoteWidget />
+        </div>
         <CountdownWidget />
       </header>
-
-      <div className="mb-6 text-center">
-        <AiQuoteWidget />
-      </div>
 
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-grow">
