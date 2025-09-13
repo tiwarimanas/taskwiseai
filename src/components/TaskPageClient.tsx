@@ -33,6 +33,7 @@ import { Skeleton } from './ui/skeleton';
 import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
+import { AiQuoteWidget } from './AiQuoteWidget';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
@@ -231,6 +232,10 @@ export function TaskPageClient() {
         <CountdownWidget />
       </header>
 
+      <div className="mb-6 text-center">
+        <AiQuoteWidget />
+      </div>
+
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-grow">
           <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
@@ -314,7 +319,7 @@ export function TaskPageClient() {
       </Sheet>
 
       <Sheet open={!!deleteAction} onOpenChange={() => setDeleteAction(null)}>
-        <SheetContent side="bottom" className="sm:max-w-md mx-auto">
+        <SheetContent side="bottom" className="sm:max-w-md mx-auto rounded-t-xl">
           <SheetHeader>
             <SheetTitle>Are you absolutely sure?</SheetTitle>
             <SheetDescription>
