@@ -1,20 +1,20 @@
+
 'use client';
 
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, SlidersHorizontal, Loader2 } from 'lucide-react';
-import type { Task } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface QuickAddTaskProps {
-  onSave: (task: Omit<Task, 'id' | 'completed' | 'eisenhowerQuadrant'> & { id?: string }) => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  onSave: () => void;
   isSaving: boolean;
   onAdvancedEdit: () => void;
 }
 
-export function QuickAddTask({ onSave, isSaving, onAdvancedEdit }: QuickAddTaskProps) {
-  const [title, setTitle] = useState('');
+export function QuickAddTask({ title, onTitleChange, onSave, isSaving, onAdvancedEdit }: QuickAddTaskProps) {
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,15 +27,7 @@ export function QuickAddTask({ onSave, isSaving, onAdvancedEdit }: QuickAddTaskP
       });
       return;
     }
-
-    onSave({
-      title: title.trim(),
-      description: '',
-      deadline: null,
-      subtasks: [],
-    });
-    
-    setTitle('');
+    onSave();
   };
 
   return (
@@ -45,7 +37,7 @@ export function QuickAddTask({ onSave, isSaving, onAdvancedEdit }: QuickAddTaskP
           type="text"
           placeholder="Add a new task... (e.g., Book flight to Bali)"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => onTitleChange(e.target.value)}
           className="pr-24 h-12 text-base rounded-full shadow-sm"
           disabled={isSaving}
         />

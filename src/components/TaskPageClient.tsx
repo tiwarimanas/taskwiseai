@@ -35,6 +35,7 @@ import { CountdownWidget } from './CountdownWidget';
 import { useTasks } from '@/context/TaskContext';
 import { QuickAddTask } from './QuickAddTask';
 import { AiQuoteWidget } from './AiQuoteWidget';
+import { addDays } from 'date-fns';
 
 type SortOrder = 'eisenhower' | 'deadline';
 type FilterType = 'all' | 'active';
@@ -62,8 +63,9 @@ export function TaskPageClient() {
   
   const [deleteAction, setDeleteAction] = useState<DeleteAction>(null);
 
+  const [quickAddTitle, setQuickAddTitle] = useState('');
 
-  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }) => {
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'completed'> & { id?: string }, fromQuickAdd = false) => {
     if (!user) return;
     setIsSaving(true);
     try {
@@ -85,8 +87,13 @@ export function TaskPageClient() {
       } else {
         await taskService.addTask(user.uid, taskWithAiData);
       }
-      setIsFormOpen(false);
-      setEditingTask(null);
+
+      if (fromQuickAdd) {
+        setQuickAddTitle('');
+      } else {
+        setIsFormOpen(false);
+        setEditingTask(null);
+      }
     } catch (error) {
       console.error('Failed to save task:', error);
       toast({
@@ -97,6 +104,24 @@ export function TaskPageClient() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleQuickSave = (deadline: Date | null) => {
+    if (quickAddTitle.trim().length < 3) {
+      toast({
+        variant: 'destructive',
+        title: 'Too short!',
+        description: 'Task title must be at least 3 characters.',
+      });
+      return;
+    }
+
+    handleSaveTask({
+      title: quickAddTitle.trim(),
+      description: '',
+      deadline: deadline,
+      subtasks: [],
+    }, true);
   };
 
   const handleEdit = (task: Task) => {
@@ -236,9 +261,28 @@ export function TaskPageClient() {
         <CountdownWidget />
       </header>
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-6">
         <div className="flex-grow">
-          <QuickAddTask onSave={handleSaveTask} isSaving={isSaving} onAdvancedEdit={() => setIsFormOpen(true)} />
+          <QuickAddTask
+            title={quickAddTitle}
+            onTitleChange={setQuickAddTitle}
+            onSave={() => handleQuickSave(null)}
+            isSaving={isSaving}
+            onAdvancedEdit={() => {
+              if (quickAddTitle) {
+                setEditingTask({ id: '', title: quickAddTitle, description: '', subtasks: [], deadline: null, completed: false });
+              } else {
+                setEditingTask(null);
+              }
+              setIsFormOpen(true);
+            }}
+          />
+          {quickAddTitle.length > 2 && (
+            <div className="mt-2 flex items-center gap-2">
+                <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(new Date())} className="rounded-full">Today</Button>
+                <Button type="button" variant='outline' size="sm" onClick={() => handleQuickSave(addDays(new Date(), 1))} className="rounded-full">Tomorrow</Button>
+            </div>
+          )}
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -311,7 +355,7 @@ export function TaskPageClient() {
           <TaskForm
             task={editingTask}
             allTasks={tasks}
-            onSave={handleSaveTask}
+            onSave={(task) => handleSaveTask(task, false)}
             onClose={() => setIsFormOpen(false)}
             isSaving={isSaving}
           />

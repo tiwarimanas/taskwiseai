@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -206,9 +207,9 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
   return (
     <SheetContent side="bottom" className="sm:max-w-[600px] grid-rows-[auto,1fr,auto] max-h-[90svh] flex flex-col mx-auto">
       <SheetHeader>
-        <SheetTitle>{task ? 'Edit Task' : 'Create Task'}</SheetTitle>
+        <SheetTitle>{task?.id ? 'Edit Task' : 'Create Task'}</SheetTitle>
         <SheetDescription>
-          {task ? 'Update the details of your task.' : ''}
+          {task?.id ? 'Update the details of your task.' : 'Add more details to your new task.'}
         </SheetDescription>
       </SheetHeader>
       <Form {...form}>
@@ -244,8 +245,6 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(new Date())} className="rounded-full">Today</Button>
-                  <Button type="button" variant={cn(field.value && format(field.value, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'secondary' : 'outline')} size="sm" onClick={() => field.onChange(addDays(new Date(), 1))} className="rounded-full">Tomorrow</Button>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -365,7 +364,7 @@ export function TaskForm({ task, allTasks, onSave, onClose, isSaving }: TaskForm
         </SheetClose>
         <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSaving ? (task ? 'Saving...' : 'Creating...') : (task ? 'Save Changes' : 'Create Task')}
+          {isSaving ? (task?.id ? 'Saving...' : 'Creating...') : (task?.id ? 'Save Changes' : 'Create Task')}
         </Button>
       </SheetFooter>
     </SheetContent>
