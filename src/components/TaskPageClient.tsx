@@ -124,13 +124,13 @@ const ViewSwitcher = ({ view, setView }: { view: ViewMode; setView: (view: ViewM
     ];
   
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
+      <div className="flex items-center gap-2">
         {views.map((v) => (
           <Button
             key={v.id}
-            variant={view === v.id ? 'background' : 'ghost'}
+            variant={view === v.id ? 'default' : 'outline'}
             size="sm"
-            className={cn('flex-1 justify-center', view === v.id && 'shadow-sm bg-background')}
+            className="rounded-full h-8 px-4"
             onClick={() => setView(v.id)}
           >
             <v.icon className="mr-2 h-4 w-4" />
@@ -536,11 +536,8 @@ export function TaskPageClient() {
         <CountdownWidget />
       </header>
 
-      <div className="mb-6">
-        <ViewSwitcher view={view} setView={setView} />
-      </div>
 
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-4">
         <div className="flex-grow">
           <QuickAddTask
             title={quickAddTitle}
@@ -604,6 +601,10 @@ export function TaskPageClient() {
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+      
+      <div className="mb-6">
+        <ViewSwitcher view={view} setView={setView} />
       </div>
 
 
